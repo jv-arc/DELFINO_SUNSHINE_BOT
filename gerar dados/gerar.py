@@ -41,12 +41,12 @@ NF_LEITURAS = 3000      # Total para pessoa fisica
 NJ_LEITURAS = 6000      # Total para pessoa juridica
 
 # Numero de leituras com falha
-NF_FALHA = 10           # Falhas para pessoa fisica
-NJ_FALHA = 20           # Falhas para pessoa juridica
+NF_FALHA = 5           # Falhas para pessoa fisica
+NJ_FALHA = 5           # Falhas para pessoa juridica
 
 # Numero de outliers
-NF_OUTLIERS = 20        # Outliers para Pessoa fisica
-NJ_OUTLIERS = 40        # Outliers para pessoa juridica
+NF_OUTLIERS = 10        # Outliers para Pessoa fisica
+NJ_OUTLIERS = 10        # Outliers para pessoa juridica
 
 # Parametros da distribuicao gaussiana
 MEAN_F = 50 # media pessoas fisicas

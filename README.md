@@ -93,7 +93,7 @@ curl -X GET http://localhost:5678/webhook/popular_db
 
 ### 3\. Analisar Leituras e Gerar E-mails
 
-Executa o workflow principal `gera_emails.json`. Ele lê os dados do banco, analisa as leituras e envia os e-mails correspondentes através do smtp4dev.
+Executa o workflow principal `gera_emails.json`. Ele lê os dados do banco, encontra as leituras problemáticas e envia os e-mails correspondentes através do smtp4dev SOMENTE para os contratos ativos. É bom notar que dependendo do número de leituras com problemas esse passo pode demorar alguns minutos.
 
 ```bash
 curl -X GET http://localhost:5678/webhook/gera_emails
