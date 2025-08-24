@@ -1,5 +1,5 @@
 {
-  "name": "limpa_db",
+  "name": "limpar_db",
   "nodes": [
     {
       "parameters": {},
@@ -132,11 +132,11 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "7acd4181-d7ef-43b2-94cf-fa1c78df51b0",
+  "versionId": "43db26eb-be10-492c-bedf-f605222da077",
   "meta": {
     "instanceId": "51be389492931e958da1ec3c4cc03c8044ac06dd89d9465126f3cdb442363742",
     "templateCredsSetupCompleted": true

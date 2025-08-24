@@ -1,5 +1,5 @@
 {
-  "name": "gera_emails",
+  "name": "gerar_emails",
   "nodes": [
     {
       "parameters": {},
@@ -399,7 +399,7 @@
     },
     {
       "parameters": {
-        "path": "gera_emails",
+        "path": "gerar_emails",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -526,7 +526,8 @@
         544
       ],
       "id": "e2722e0d-f817-432e-81c1-d54abcd2b7c6",
-      "name": "Merge5"
+      "name": "Merge5",
+      "executeOnce": false
     },
     {
       "parameters": {
@@ -1126,13 +1127,12 @@
           "assignments": [
             {
               "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
-              "name": "N_af",
+              "name": "count",
               "value": "={{ $input.all().length }}",
               "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
         "options": {}
       },
       "type": "n8n-nodes-base.set",
@@ -1151,20 +1151,19 @@
           "assignments": [
             {
               "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
-              "name": "N_bf",
+              "name": "count",
               "value": "={{ $input.all().length }}",
               "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1648,
-        592
+        1760,
+        528
       ],
       "id": "b4327eb1-ddca-4023-91f5-2389f924bf17",
       "name": "COUNT BF",
@@ -1176,20 +1175,19 @@
           "assignments": [
             {
               "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
-              "name": "N_nf",
+              "name": "count",
               "value": "={{ $input.all().length }}",
               "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         1648,
-        720
+        592
       ],
       "id": "d015cf3d-4292-4735-9540-d2d329b1855b",
       "name": "COUNT NF",
@@ -1197,24 +1195,15 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
-              "name": "N_aj",
-              "value": "={{ $input.all().length }}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": true,
+        "mode": "raw",
+        "jsonOutput": "={\n  \"count\": \"{{ $input.all().length }}\"\n}\n",
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         1760,
-        528
+        656
       ],
       "id": "f6f25624-3d93-4690-9be4-2abf57468c77",
       "name": "COUNT AJ",
@@ -1226,20 +1215,19 @@
           "assignments": [
             {
               "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
-              "name": "N_bj",
+              "name": "count",
               "value": "={{ $input.all().length }}",
               "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1760,
-        656
+        1648,
+        720
       ],
       "id": "613a0d22-6795-4292-8514-017e4c26a89b",
       "name": "COUNT BJ",
@@ -1251,20 +1239,19 @@
           "assignments": [
             {
               "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
-              "name": "N_nj",
+              "name": "count",
               "value": "={{ $input.all().length }}",
               "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1776,
-        800
+        1760,
+        784
       ],
       "id": "010ce129-7f09-4b77-896b-7368524d175f",
       "name": "COUNT NJ",
@@ -1304,7 +1291,7 @@
       "parameters": {
         "content": "## Gera Retorno",
         "height": 544,
-        "width": 528,
+        "width": 800,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
@@ -1364,7 +1351,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"leituras_pessoas_fisicas\": {\n    \"alto_de_mais\": {{ $json.N_af || 0 }},\n    \"baixo_de_mais\": {{ $json.N_bf || 0 }},\n    \"vazio\": {{ $json.N_nf || 0 }}\n  },\n  \"leituras_pessoas_juridicas\": {\n    \"alto_de_mais\": {{ $json.N_aj || 0 }},\n    \"baixo_de_mais\": {{ $json.N_bj || 0 }},\n    \"vazio\": {{ $json.N_nj || 0 }}\n  }\n} ",
+        "responseBody": "={\n  \"leituras_pessoas_fisicas\": {\n    \"alto_de_mais\": {{ $json.count[0] }},\n    \"baixo_de_mais\": {{ $json.count[1] }},\n    \"vazio\": {{ $json.count[2] }}\n  },\n  \"leituras_pessoas_juridicas\": {\n    \"alto_de_mais\": {{ $json.count[3] }},\n    \"baixo_de_mais\": {{ $json.count[4] }},\n    \"vazio\": {{ $json.count[5] }}\n  }\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
@@ -1375,9 +1362,243 @@
       ],
       "id": "5896e926-7484-4f06-b923-4f17a8f4e4cd",
       "name": "RESPOSTA"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "count"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        608
+      ],
+      "id": "082c8d03-9668-4b8b-a7f9-852313bce6e6",
+      "name": "Aggregate",
+      "executeOnce": false
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Mensagem Para Pessoas Físicas": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Senhor Rodrigo Fernandes Cunha,\n\nEspero que este e-mail o encontre bem. \n\nEstamos entrando em contato para informá-lo sobre uma leitura identificada em seu contrato de fornecimento de energia solar (ID do contrato: 2) realizada no dia 24 de maio de 2025. O valor da leitura foi de 98.028, um número considerado muito alto e que pode indicar uma anomalia, possivelmente devido a um erro de leitura, ou a fatores como aparelhos novos, mudança de rotina, ou ainda inversores com defeito.\n\nPara entender melhor o que pode ter ocorrido, sugerimos que você monitore seu consumo diário. Caso tenha percebido alguma alteração significativa em sua rotina ou a instalação de novos aparelhos, isso pode explicar a leitura elevada. \n\nAdicionalmente, recomendamos que, se você suspeitar de problemas técnicos, entre em contato com nossa equipe para solicitar assistência técnica. Estamos aqui para ajudar.\n\nSe precisar de mais informações ou apoio, não hesite em nos contactar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado João Souza Rocha,\n\nEsperamos que você esteja bem. \n\nIdentificamos uma leitura de energia solar referente ao seu contrato de número 5, datada de 20 de fevereiro de 2027, com um valor de 93.883. Essa leitura foi classificada como um outlier, ou seja, está acima do esperado e, portanto, pode indicar um erro ou uma falha na medição.\n\nAs leituras muito altas podem ocorrer por diversos motivos, entre eles: a instalação de aparelhos novos, mudanças na rotina da sua casa ou até problemas com os inversores. Para evitar possíveis surpresas na sua fatura, sugerimos que você monitore seu consumo diário e, se necessário, considere chamar a ajuda técnica para uma avaliação mais detalhada.\n\nCaso tenha alguma dúvida ou precise de assistência, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \nEmail: ajuda@delfino.com  \nTelefone: +55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Sr. João Souza Rocha,\n\nEspero que esta mensagem o encontre bem!\n\nEstamos entrando em contato para informá-lo sobre uma leitura identificada em seu sistema de energia solar que foi considerada um outlier. Na leitura realizada em 5 de julho de 2027, observamos um valor de 87.108, que está significativamente acima do esperado para o seu contrato de número 5, iniciado em 9 de maio de 2025.\n\nEsse tipo de anomalia pode ocorrer por alguns motivos, como a instalação de aparelhos novos, mudanças em sua rotina de consumo ou até mesmo problemas nos inversores. Para garantir que tudo esteja funcionando corretamente, recomendamos que você monitore seu consumo diário e, caso a leitura se mantenha elevada, considere chamar uma assistência técnica para verificar possíveis falhas em seu sistema.\n\nCaso tenha mais dúvidas ou precise de ajuda, não hesite em nos contatar. Estamos à disposição para assisti-lo.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezada Larissa Ferreira Dias,\n\nEspero que você esteja bem!\n\nRecentemente identificamos que a leitura do seu sistema de energia solar, referente ao seu contrato (ID: 6) e realizada no dia 13 de janeiro de 2026, apresentou um valor de 81.415, o que é considerado uma leitura muito alta. Isso pode indicar uma anomalia que merece a sua atenção.\n\nAs possíveis causas para essa leitura elevada incluem a instalação recente de aparelhos que consomem mais energia, uma mudança na rotina de consumo, ou até mesmo um problema técnico, como um inversor com defeito. \n\nRecomendamos que você monitore o seu consumo diário para verificar se essa alta persistir. Além disso, pode ser útil entrar em contato com um profissional técnico para inspecionar seu sistema e garantir que tudo esteja funcionando corretamente.\n\nCaso precise de assistência ou tenha alguma dúvida, não hesite em nos contatar. Estamos aqui para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Sr. Paulo Mendes Barbosa,\n\nEsperamos que esteja bem!\n\nNa última leitura registrada no dia 3 de fevereiro de 2025, identificamos um valor de 96.388 kWh, que se apresenta como um outlier em relação ao seu histórico de consumo. Essa discrepância pode indicar uma leitura muito alta, possivelmente causada por novos aparelhos, uma mudança na rotina de consumo ou até um defeito no inversor.\n\nRecomendamos que você monitore seu consumo diário para verificar se há realmente um aumento significativo. Caso você note uma fatura muito alta sem justificativa, sugerimos que entre em contato com nossa equipe técnica, a qual poderá oferecer ajuda detalhada.\n\nSe precisar de qualquer orientação adicional, não hesite em nos contatar pelo e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAgradecemos pela sua compreensão e continuamos à disposição.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Caro Leonardo Cavalcanti Silva,\n\nEsperamos que você esteja bem!\n\nEstamos entrando em contato para informar sobre uma anomalia detectada em sua leitura de energia solar registrada em 16 de janeiro de 2028. O valor da leitura foi de 85.794 kWh, que é consideravelmente alto e aponta para um possível erro em nosso sistema.\n\nEste problema está relacionado ao seu contrato de energia solar, que começou em 5 de fevereiro de 2025. Altas leituras como essa podem ocorrer devido a algumas razões, como a instalação de novos aparelhos, mudanças na sua rotina diária ou, em alguns casos, possíveis defeitos nos inversores.\n\nRecomendamos que você monitore o seu consumo diário nos próximos dias e, se notar qualquer anomalia, não hesite em nos contatar. Se necessário, sugerimos que você busque assistência técnica para verificar a condição do seu sistema.\n\nSe precisar de qualquer ajuda ou tiver dúvidas, nossa equipe de suporte está à disposição através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAgradecemos a sua compreensão e estamos aqui para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Leonardo Cavalcanti Silva,\n\nEspero que este e-mail o encontre bem. \n\nGostaria de informá-lo que uma das leituras do seu sistema de energia solar, registrada no dia 3 de novembro de 2025, apresentou um valor de 102.314 kWh, o que foi identificado como uma leitura muito alta. Esta ocorrência pode ser um indicativo de uma falha ou erro no registro, e seu Contrato nº 9, que teve início em 5 de fevereiro de 2025, está associado a essa leitura.\n\nAs possíveis causas para essa leitura elevada incluem a introdução de novos aparelhos em sua residência, uma mudança significativa em sua rotina ou até mesmo algum problema com o inversor. Para garantir que tudo esteja funcionando corretamente, recomendamos que você:\n\n- Monitore o seu consumo diário nos próximos dias para identificar qualquer anomalia.\n- Caso perceba algo suspeito, sugerimos que entre em contato com nossa equipe técnica para uma avaliação mais detalhada.\n\nEstamos à disposição para ajudá-lo em qualquer situação. Se precisar de mais informações ou tiver dúvidas, não hesite em nos contatar pelo e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Gabriel Martins Lima,\n\nEsperamos que você esteja bem! \n\nEstamos entrando em contato para informar que a leitura referente ao seu contrato de energia solar, identificado pelo ID 1, realizada no dia 28 de maio de 2026, apresentou um valor considerado muito baixo, com um total de 17.208. Esse tipo de leitura pode indicar algumas possíveis situações, como objetos bloqueando os painéis solares, crescimento de vegetação, sujeira acumulada nos módulos, cabos soltos, inversores com defeito ou até mesmo painéis danificados.\n\nPara garantir o melhor desempenho do seu sistema, recomendamos que você realize uma inspeção visual nos painéis solares. Verifique se há obstruções ou sujeira que possam estar afetando a captação de energia. Além disso, considere agendar uma limpeza dos painéis, se necessário.\n\nSe precisar de assistência adicional ou se suspeitar de problemas mais sérios, não hesite em nos contatar. Estamos aqui para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Rodrigo Fernandes Cunha,\n\nEspero que esteja bem!\n\nGostaríamos de lhe informar que, durante nossa análise de leitura, identificamos uma anomalia na medição do seu sistema de energia solar referente ao contrato nº 2, com início em 07 de dezembro de 2024. A leitura registrada no dia 14 de julho de 2027 foi de 9.327 kWh, o que é consideravelmente baixo em comparação com os padrões normais.\n\nEsse tipo de leitura, classificada como \"muito baixa\", pode ser resultado de algumas situações, como objetos bloqueando os painéis, crescimento de vegetação, sujeira acumulada, cabos soltos, inversores com defeito ou até mesmo danos nos painéis.\n\nPara solucionar este problema, recomendamos que você:\n\n1. Faça uma inspeção visual nos painéis solares, garantindo que não haja obstruções ou sujeira que possam estar afetando a captação de luz.\n2. Agende uma limpeza dos painéis se necessário, para otimizar seu desempenho.\n3. Confira se os cabos estão conectados corretamente e se não há sinais de danos.\n\nSe a situação persistir ou se você precisar de ajuda técnica, não hesite em nos contactar através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nEstamos aqui para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Sr. Paulo Mendes Barbosa,\n\nEspero que este e-mail o encontre bem.\n\nEstamos entrando em contato para informá-lo sobre uma leitura de sua unidade que foi identificada como um outlier, referencia à sua última medição realizada no dia 02 de novembro de 2022, onde o valor registrado foi de 11.974 kWh. Essa leitura é considerada muito baixa em comparação com os padrões usuais.\n\nEssa ocorrência pode ser atribuída a alguns fatores, como objetos obstruindo os painéis solares, o crescimento de vegetação ao redor, sujeira nos módulos, cabos soltos, inversores com defeito ou até mesmo painéis danificados.\n\nPara resolver essa situação, recomendamos que você realize uma inspeção visual dos painéis solares para identificar qualquer bloqueio ou sujeira. Além disso, pode ser necessário agendar uma limpeza.\n\nEstamos à disposição para ajudá-lo com qualquer dúvida que você tiver ou se precisar de assistência técnica. Você pode nos contatar através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAgradecemos sua atenção e estamos aqui para garantir que seu sistema solar opere de maneira eficiente.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      }
+    ],
+    "Mensagem Para Pessoas Jurídicas": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente da Energy ME,\n\nEspero que esteja bem.\n\nEstamos entrando em contato para comunicar que a leitura referente ao seu contrato (ID: 35), datada de 13 de agosto de 2026, apresentou um valor considerado muito baixo, totalizando 3.964. Esse valor pode indicar um problema no sistema de geração de energia solar.\n\nAs possíveis causas para essa leitura anômala incluem: crescimento de vegetação ao redor dos painéis solares, sujeira acumulada nos módulos, problemas na instalação, ou até mesmo equipamentos danificados. Recomendamos que sejam tomadas as seguintes providências:\n\n1. Agendar um serviço de inspeção dos painéis para verificar se há obstruções causadas por vegetação ou sujeira.\n2. Se necessário, agendar uma limpeza dos painéis solares para garantir que o sistema esteja operando na sua máxima eficiência.\n3. Caso identifique problemas na instalação ou equipamentos danificados, sugerimos a agendamento de manutenção ou troca dos equipamentos.\n\nPor favor, entre em contato pelo telefone +55 11 4002-8922 ou pelo e-mail ajuda@delfino.com para agendar esses serviços ou esclarecer quaisquer dúvidas.\n\nAgradecemos pela sua atenção e ficamos à disposição para ajudar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) representante da Energy ME,\n\nEsperamos que este e-mail o(a) encontre bem.\n\nEstamos entrando em contato para informar que, em nossa análise das leituras de energia solar referentes ao seu contrato (ID: 35), identificamos uma discrepância que classifica a leitura realizada no dia 03 de junho de 2027, com um valor de 19.590, como uma leitura muito baixa.\n\nEsse tipo de leitura anômala pode ser causado por vários fatores, como o crescimento de vegetação ao redor dos painéis, sujeira acumulada nos mesmos, problemas na instalação ou até mesmo equipamentos danificados. Para garantir que sua instalação funcione de maneira eficiente e segura, recomendamos que você considere as seguintes ações:\n\n1. Agendar um serviço de inspeção dos painéis.\n2. Agendar a limpeza dos painéis para remover qualquer sujeira que possa estar afetando a geração de energia.\n3. Verificar a necessidade de manutenção ou troca de equipamentos que possam estar comprometidos.\n\nEstamos à disposição para ajudá-lo(a) em qualquer um desses procedimentos. Para agendar serviços ou tirar dúvidas, não hesite em nos contatar através do número +55 11 4002-8922 ou do e-mail ajuda@delfino.com.\n\nAgradecemos pela sua atenção e pela confiança em nossos serviços.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Volt do Brasil EIRELI,\n\nEsperamos que este e-mail o encontre bem. \n\nEstamos entrando em contato para informar que a leitura de medição referente ao contrato de serviço sob o ID 19, datada de 5 de janeiro de 2026, foi identificada como uma leitura vazia. Isso pode ter ocorrido devido a problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados.\n\nPara resolver essa situação, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Caso o problema persista, agendar uma assistência técnica para uma análise mais detalhada do sistema.\n3. Considerar a encomenda de novos equipamentos, caso os atuais estejam apresentando falhas.\n\nÉ importante fornecer um sistema de monitoramento eficaz para assegurar que o seu sistema de energia solar opere com eficiência.\n\nEstamos à disposição para qualquer esclarecimento e ajuda que você possa necessitar. Por favor, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente Energy ME,\n\nEsperamos que este e-mail o(a) encontre bem.\n\nEstamos entrando em contato para informá-lo(a) sobre uma anomalia na leitura de energia solar referente ao seu contrato de número 35, iniciado em 13 de outubro de 2025. A leitura realizada em 13 de janeiro de 2026 (ID: 17) foi identificada como uma leitura vazia, o que pode indicar problemas de conectividade, um inversor desligado ou com defeito, ou até mesmo disjuntores desarmados.\n\nRecomendamos as seguintes ações para resolver a situação:\n\n1. **Reiniciar o sistema de monitoramento**, caso isso ainda não tenha sido feito.\n2. **Agendar uma assistência técnica** para garantir que todos os componentes do sistema estejam funcionando corretamente.\n3. **Encomendar novos equipamentos** se for identificado que há um problema irreparável com os atuais.\n\nFicamos à disposição para auxiliá-lo(a) em qualquer um desses processos. Para agendamentos ou mais informações, não hesite em entrar em contato.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente,\n\nEstamos entrando em contato para informar sobre uma anomalia identificada na leitura do seu sistema de energia solar, referente ao contrato de número 42 e datado de início em 3 de março de 2023. A leitura realizada no dia 17 de janeiro de 2024 (ID da leitura: 19) apresentou um valor vazio, o que indica um possível problema que requer atenção.\n\nAs causas mais comuns para o registro de uma leitura vazia incluem problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados. Para garantir que seu sistema voltará a funcionar de maneira correta e eficiente, recomendamos que você tome as seguintes providências:\n\n1. Reinicie o sistema de monitoramento para verificar se a leitura se normaliza.\n2. Caso o problema persista, sugere-se agendar assistência técnica para uma avaliação detalhada do sistema.\n3. Em situações onde a manutenção for necessária, considere a possibilidade de encomendar novos equipamentos, caso se verifique que os existentes necessitam de troca.\n\nEstamos à disposição para ajudar com o que você precisar. Por favor, não hesite em entrar em contato conosco.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) representante da Energia Solar EIRELI,\n\nEspero que este e-mail o(a) encontre bem. \n\nGostaríamos de informar que uma leitura de seu sistema de energia solar, realizada no dia 4 de maio de 2026, foi identificada como uma leitura vazia. A leitura em questão refere-se ao contrato de número 44, que teve início em 13 de fevereiro de 2025.\n\nAs leituras vazias podem ser causadas por problemas de conectividade, inversores desligados ou com defeito, ou ainda disjuntores desarmados. Recomendamos que algumas ações sejam tomadas para solucionar este problema:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar uma assistência técnica para verificar as condições do equipamento.\n3. Considerar a encomenda de novos equipamentos, caso os atuais não estejam funcionando corretamente.\n\nSe precisar de assistência adicional ou quiser agendar um atendimento, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      }
+    ]
+  },
   "connections": {
     "When clicking ‘Execute workflow’": {
       "main": [
@@ -1580,9 +1801,9 @@
       "main": [
         [
           {
-            "node": "ESPERA",
+            "node": "Aggregate",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
@@ -1856,7 +2077,7 @@
           {
             "node": "Merge5",
             "type": "main",
-            "index": 2
+            "index": 1
           }
         ]
       ]
@@ -1867,7 +2088,7 @@
           {
             "node": "Merge5",
             "type": "main",
-            "index": 4
+            "index": 2
           }
         ]
       ]
@@ -1878,7 +2099,7 @@
           {
             "node": "Merge5",
             "type": "main",
-            "index": 1
+            "index": 3
           }
         ]
       ]
@@ -1889,7 +2110,7 @@
           {
             "node": "Merge5",
             "type": "main",
-            "index": 3
+            "index": 4
           }
         ]
       ]
@@ -1915,13 +2136,29 @@
           }
         ]
       ]
+    },
+    "RESPOSTA": {
+      "main": [
+        []
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "ESPERA",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "b28817d3-f546-4bb3-b3d7-836d4b90e5a4",
+  "versionId": "98b44d7e-7bcf-445b-abe4-7fc2860bd799",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "51be389492931e958da1ec3c4cc03c8044ac06dd89d9465126f3cdb442363742"

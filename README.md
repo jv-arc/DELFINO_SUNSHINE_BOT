@@ -77,7 +77,7 @@ Após os containers estarem rodando, você pode disparar os workflows do n8n atr
 
 ### 1\. Limpar o Banco de Dados
 
-Executa o workflow `limpa_db.json` para apagar todos os dados das tabelas, preparando o ambiente para uma nova carga.
+Executa o workflow `limpar_db.json` para apagar todos os dados das tabelas, preparando o ambiente para uma nova carga.
 
 ```bash
 curl -X GET http://localhost:5678/webhook/limpar_db
@@ -93,10 +93,10 @@ curl -X GET http://localhost:5678/webhook/popular_db
 
 ### 3\. Analisar Leituras e Gerar E-mails
 
-Executa o workflow principal `gera_emails.json`. Ele lê os dados do banco, encontra as leituras problemáticas e envia os e-mails correspondentes através do smtp4dev SOMENTE para os contratos ativos. É bom notar que dependendo do número de leituras com problemas esse passo pode demorar alguns minutos.
+Executa o workflow principal `gerar_emails.json`. Ele lê os dados do banco, encontra as leituras problemáticas e envia os e-mails correspondentes através do smtp4dev SOMENTE para os contratos ativos. É bom notar que dependendo do número de leituras com problemas esse passo pode demorar alguns minutos.
 
 ```bash
-curl -X GET http://localhost:5678/webhook/gera_emails
+curl -X GET http://localhost:5678/webhook/gerar_emails
 ```
 
 ## Acessando os Serviços
