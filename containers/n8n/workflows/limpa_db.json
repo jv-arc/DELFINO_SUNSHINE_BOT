@@ -1,0 +1,146 @@
+{
+  "name": "limpa_db",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        0
+      ],
+      "id": "93680ba4-e7c1-47dc-a228-34e8487d3b6b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "TRUNCATE TABLE leituras, contratos, clientes RESTART IDENTITY CASCADE",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "7d36fb4d-386c-4c58-ae6a-3be4c2a7d469",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# CUIDADO\n### Apaga todos os dados no db para fins de teste!",
+        "height": 512,
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        -160
+      ],
+      "id": "84d70116-79cc-4e36-9c5c-fda9caf22b8d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Normalmente não seria uma boa ideia ter um trigger disso por WebHook deixei aqui só para teste do case",
+        "height": 144,
+        "width": 192,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -160
+      ],
+      "id": "6455e16a-3d9b-4621-952d-25ec61b95092",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "path": "limpar_db",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -464,
+        176
+      ],
+      "id": "3d941dac-a8c8-47ff-91d7-9a428a7ac39f",
+      "name": "Webhook",
+      "webhookId": "0f308dfd-49b8-42a7-82d5-628505e58412"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"banco limpo\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -80,
+        0
+      ],
+      "id": "28b1a39c-afbe-4d85-a64d-fa41dc0c6588",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7acd4181-d7ef-43b2-94cf-fa1c78df51b0",
+  "meta": {
+    "instanceId": "51be389492931e958da1ec3c4cc03c8044ac06dd89d9465126f3cdb442363742",
+    "templateCredsSetupCompleted": true
+  },
+  "id": "MKYTMj5YE0ax1Ogi",
+  "tags": []
+}

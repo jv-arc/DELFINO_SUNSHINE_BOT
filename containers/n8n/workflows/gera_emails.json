@@ -1,0 +1,2777 @@
+{
+  "name": "gera_emails",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1856,
+        -48
+      ],
+      "id": "81c4ead1-16a5-4b5f-a2ed-91dbf3f03159",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "content": "## Encontra Valores Problemáticos",
+        "height": 464,
+        "width": 544,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        -240
+      ],
+      "id": "485c6f64-6471-4c77-9d20-c3ca7ca8f0d7",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.*, c.*, cl.*, (l.valor - {{ $json.media }} ) / {{ $json.desvio }} AS score_z\nFROM leituras l\nINNER JOIN contratos c ON l.fk_contratos = c.id\nINNER JOIN clientes cl ON c.fk_cliente = cl.id\nWHERE cl.tipo = 'F' AND c.status = 'ativo'\n--So se calcula o score z dos contratos ativos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -96,
+        -144
+      ],
+      "id": "c7d913fc-de88-4bb0-9497-71cd02eb2684",
+      "name": "Calcula Score (F)",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT AVG(l.valor) AS media, STDDEV(l.valor) AS desvio\n  FROM leituras l\n  INNER JOIN contratos c ON l.fk_contratos = c.id\n  INNER JOIN clientes cl ON c.fk_cliente = cl.id\n  WHERE cl.tipo = 'F'\n--Os valores para analise estatistica sao de todos os contratos, ativos ou nao",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -272,
+        -144
+      ],
+      "id": "4d296c3d-cd4e-4a7b-aee0-f672f3a07cc8",
+      "name": "Encontra Valores (F)",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Nota sobre Queries:\nA maior parte das queries para encontrar os outliers tanto para pessoas físicas quanto jurídicas, poderíam ser feitas em uma query só. Não só poderiam, como DEVERIAM. Seria tudo mais eficiente e rápido.\n\nEscolhi não fazer em menos queries de propósito para deixar explícito tanto o raciocínio, como também a forma de implementar esse tipo de lógica no próprio n8n de forma clara e compartimentada.\n\nNo fim das contas é um projeto um pouco mais didático\n",
+        "height": 240,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2224,
+        -336
+      ],
+      "id": "9381a552-0630-43c8-8d47-ed561d8bb0f4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d3f1f527-b36b-454a-9cab-3ffecb1f18cd",
+              "leftValue": "={{ parseFloat($json.score_z) }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        128,
+        -192
+      ],
+      "id": "d89e972a-3018-411c-a84a-1df360929062",
+      "name": "Maior que 3 (F)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d3f1f527-b36b-454a-9cab-3ffecb1f18cd",
+              "leftValue": "={{ parseFloat($json.score_z)}}",
+              "rightValue": -3,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        128,
+        -64
+      ],
+      "id": "43ba3dac-0ad2-40b5-bb9f-22422dc37a5c",
+      "name": "Menor que -3 (F)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        336
+      ],
+      "id": "c315b0c0-0af5-4061-a89d-71c71ec06adf",
+      "name": "START"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH stats AS (\n  SELECT \n    AVG(l.valor) AS media, \n    STDDEV(l.valor) AS desvio\n  FROM leituras l\n  INNER JOIN contratos c ON l.fk_contratos = c.id\n  INNER JOIN clientes cl ON c.fk_cliente = cl.id\n  WHERE cl.tipo = 'F' \n), outliers AS (\n  SELECT \n    l.*, \n    c.*, \n    cl.*, \n    (l.valor - stats.media ) / stats.desvio AS score_z\n  FROM leituras l\n  INNER JOIN contratos c ON l.fk_contratos = c.id\n  INNER JOIN clientes cl ON c.fk_cliente = cl.id\n  CROSS JOIN stats\n  WHERE cl.tipo = 'F' AND c.status = 'ativo'\n)\nSELECT \n  *,\n  CASE\n    WHEN score_z >=3 THEN 'grande_de_mais'\n    WHEN score_z <=-3 THEN 'pequeno_de_mais'\n    WHEN valor IS NULL THEN 'leitura_vazia'\n  END AS problema_do_outlier\nFROM outliers WHERE ABS(score_z) >= 3 OR valor IS NULL;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2192,
+        0
+      ],
+      "id": "df518bea-040b-4d30-93cb-1a980773eb4f",
+      "name": "...",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Exemplo com uma query única\n",
+        "height": 208,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2224,
+        -48
+      ],
+      "id": "1d48f35b-6888-497a-9973-d79bf23fd296",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.*, c.*, cl.*\nFROM leituras l\nINNER JOIN contratos c ON l.fk_contratos = c.id\nINNER JOIN clientes cl ON c.fk_cliente = cl.id\nWHERE c.status = 'ativo' AND cl.tipo = 'F' AND l.valor IS NULL",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -272,
+        64
+      ],
+      "id": "759d0da6-ea3a-4e19-82b6-6fec7c99ea79",
+      "name": "Leituras Vazias (F)",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Classifica Problemas",
+        "height": 464,
+        "width": 400,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        288,
+        -240
+      ],
+      "id": "c3a67d90-9eb7-4686-bb6a-d9eb1129527b",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "# Pessoas Físicas",
+        "height": 656,
+        "width": 1600,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -384
+      ],
+      "id": "b5254bb7-15a7-4c2e-8e4f-6f8a31ba687a",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Prepara Emails",
+        "height": 336,
+        "width": 480,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        752,
+        -240
+      ],
+      "id": "7b1c2bec-a949-481f-8b37-d917ec6898f4",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Encontra Valores Problemáticos",
+        "height": 464,
+        "width": 544,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        768
+      ],
+      "id": "4a17ffec-d9f6-45d8-8a74-2fe8d49006fb",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d3f1f527-b36b-454a-9cab-3ffecb1f18cd",
+              "leftValue": "={{ parseFloat($json.score_z) }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        816
+      ],
+      "id": "07c8eb1b-7033-4ea9-80ef-485dd02f52fd",
+      "name": "Maior que 3 (F)1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d3f1f527-b36b-454a-9cab-3ffecb1f18cd",
+              "leftValue": "={{ parseFloat($json.score_z)}}",
+              "rightValue": -3,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        944
+      ],
+      "id": "504fa675-8f57-4859-a25f-7aa74b6d4766",
+      "name": "Menor que -3 (F)1"
+    },
+    {
+      "parameters": {
+        "content": "## Classifica Problemas",
+        "height": 464,
+        "width": 400,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        272,
+        768
+      ],
+      "id": "ea7f4416-3cc6-4c49-9d74-2d6489747d56",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "# Pessoas Jurídicas",
+        "height": 656,
+        "width": 1600,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        624
+      ],
+      "id": "497de5ee-53a4-4e7a-b217-72b633766721",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "## Prepara Emails",
+        "height": 272,
+        "width": 480,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        736,
+        768
+      ],
+      "id": "c3bb41a6-8d49-4293-85b9-9c0cb08ba84f",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "path": "gera_emails",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1856,
+        80
+      ],
+      "id": "d557381d-b91f-4019-9fd2-818044657072",
+      "name": "Webhook",
+      "webhookId": "ca5b8cf7-06ab-46a1-9c93-ceb7bc108ddb"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT AVG(l.valor) AS media, STDDEV(l.valor) AS desvio\n  FROM leituras l\n  INNER JOIN contratos c ON l.fk_contratos = c.id\n  INNER JOIN clientes cl ON c.fk_cliente = cl.id\n  WHERE cl.tipo = 'J'\n--Os valores para analise estatistica sao de todos os contratos, ativos ou nao",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -288,
+        864
+      ],
+      "id": "7762bc4c-fcc4-4124-b351-c618974d265b",
+      "name": "Encontra Valores (J)",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.*, c.*, cl.*, (l.valor - {{ $json.media }} ) / {{ $json.desvio }} AS score_z\nFROM leituras l\nINNER JOIN contratos c ON l.fk_contratos = c.id\nINNER JOIN clientes cl ON c.fk_cliente = cl.id\nWHERE cl.tipo = 'J' AND c.status = 'ativo'\n--So se calcula o score z dos contratos ativos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -112,
+        864
+      ],
+      "id": "01522982-9309-45f1-9a64-253971b5ae17",
+      "name": "Calcula Score (J)",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.*, c.*, cl.*\nFROM leituras l\nINNER JOIN contratos c ON l.fk_contratos = c.id\nINNER JOIN clientes cl ON c.fk_cliente = cl.id\nWHERE c.status = 'ativo' AND cl.tipo = 'J' AND l.valor IS NULL",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -288,
+        1072
+      ],
+      "id": "b8e58bd2-cfd4-4025-aacf-efd7aca6f987",
+      "name": "Leituras Vazias (J)",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "ajuda@delfino.com",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Problemas de Leitura",
+        "emailFormat": "text",
+        "text": "={{ $json.message.content }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1856,
+        -48
+      ],
+      "id": "eac817bb-27da-4016-a094-a996846b0baf",
+      "name": "Send email",
+      "webhookId": "cec38e24-75f2-4023-9180-9be0d39c9a8a",
+      "credentials": {
+        "smtp": {
+          "id": "k2T1l7faWNq1h8dU",
+          "name": "My SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1664,
+        -48
+      ],
+      "id": "9a0f9d59-c2e5-462b-b84a-7ad2944e16b0",
+      "name": "Merge4"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"leituras_pessoas_fisicas\": {\n    \"alto_de_mais\": {{ $json.N_af || 0 }},\n    \"baixo_de_mais\": {{ $json.N_bf || 0 }},\n    \"vazio\": {{ $json.N_nf || 0 }}\n  },\n  \"leituras_pessoas_juridicas\": {\n    \"alto_de_mais\": {{ $json.N_aj || 0 }},\n    \"baixo_de_mais\": {{ $json.N_bj || 0 }},\n    \"vazio\": {{ $json.N_nj || 0 }}\n  }\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        2624,
+        256
+      ],
+      "id": "5896e926-7484-4f06-b923-4f17a8f4e4cd",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2016,
+        544
+      ],
+      "id": "e2722e0d-f817-432e-81c1-d54abcd2b7c6",
+      "name": "Merge5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "50ce76ce-3c40-450a-ac4c-c3165da63a22",
+              "name": "motivo",
+              "value": "leitura_muito_alta",
+              "type": "string"
+            },
+            {
+              "id": "664b2d17-5820-43e8-8db7-12581d3e4895",
+              "name": "id",
+              "value": "={{ $('Calcula Score (F)').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "20b6ef98-c82e-451b-b1f2-fc2b3f2f8503",
+              "name": "fk_contratos",
+              "value": "={{ $('Calcula Score (F)').item.json.fk_contratos }}",
+              "type": "string"
+            },
+            {
+              "id": "451f6437-55b1-4007-a0a3-bbd522923e55",
+              "name": "data_leitura",
+              "value": "={{ $('Calcula Score (F)').item.json.data_leitura }}",
+              "type": "string"
+            },
+            {
+              "id": "8bc720e3-f499-41d9-96f3-9ad6bef86ca7",
+              "name": "valor",
+              "value": "={{ $('Calcula Score (F)').item.json.valor }}",
+              "type": "string"
+            },
+            {
+              "id": "dc4e6de1-061f-4105-aaf1-780ebcc5e2c5",
+              "name": "data_inicio",
+              "value": "={{ $('Calcula Score (F)').item.json.data_inicio }}",
+              "type": "string"
+            },
+            {
+              "id": "082a230f-2615-4ef0-8b65-f0512b615fb4",
+              "name": "nome",
+              "value": "={{ $('Calcula Score (F)').item.json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "e7afc255-7387-4d93-821a-6db924fee0d2",
+              "name": "cpf",
+              "value": "={{ $('Calcula Score (F)').item.json.cpf }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        -192
+      ],
+      "id": "bd057653-e4b3-4ad7-9838-1045a689e85e",
+      "name": "ALTA(F)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "50ce76ce-3c40-450a-ac4c-c3165da63a22",
+              "name": "motivo",
+              "value": "leitura_muito_baixa",
+              "type": "string"
+            },
+            {
+              "id": "664b2d17-5820-43e8-8db7-12581d3e4895",
+              "name": "id",
+              "value": "={{ $('Calcula Score (F)').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "20b6ef98-c82e-451b-b1f2-fc2b3f2f8503",
+              "name": "fk_contratos",
+              "value": "={{ $('Calcula Score (F)').item.json.fk_contratos }}",
+              "type": "string"
+            },
+            {
+              "id": "451f6437-55b1-4007-a0a3-bbd522923e55",
+              "name": "data_leitura",
+              "value": "={{ $('Calcula Score (F)').item.json.data_leitura }}",
+              "type": "string"
+            },
+            {
+              "id": "8bc720e3-f499-41d9-96f3-9ad6bef86ca7",
+              "name": "valor",
+              "value": "={{ $('Calcula Score (F)').item.json.valor }}",
+              "type": "string"
+            },
+            {
+              "id": "dc4e6de1-061f-4105-aaf1-780ebcc5e2c5",
+              "name": "data_inicio",
+              "value": "={{ $('Calcula Score (F)').item.json.data_inicio }}",
+              "type": "string"
+            },
+            {
+              "id": "082a230f-2615-4ef0-8b65-f0512b615fb4",
+              "name": "nome",
+              "value": "={{ $('Calcula Score (F)').item.json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "e7afc255-7387-4d93-821a-6db924fee0d2",
+              "name": "cpf",
+              "value": "={{ $('Calcula Score (F)').item.json.cpf }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        -64
+      ],
+      "id": "c6df809a-2e2c-441e-b109-cd07cc4f4693",
+      "name": "BAIXA(F)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "50ce76ce-3c40-450a-ac4c-c3165da63a22",
+              "name": "motivo",
+              "value": "leitura_vazia",
+              "type": "string"
+            },
+            {
+              "id": "664b2d17-5820-43e8-8db7-12581d3e4895",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "20b6ef98-c82e-451b-b1f2-fc2b3f2f8503",
+              "name": "fk_contratos",
+              "value": "={{ $json.fk_contratos }}",
+              "type": "string"
+            },
+            {
+              "id": "451f6437-55b1-4007-a0a3-bbd522923e55",
+              "name": "data_leitura",
+              "value": "={{ $json.data_leitura }}",
+              "type": "string"
+            },
+            {
+              "id": "8bc720e3-f499-41d9-96f3-9ad6bef86ca7",
+              "name": "valor",
+              "value": "={{ $json.valor }}",
+              "type": "string"
+            },
+            {
+              "id": "dc4e6de1-061f-4105-aaf1-780ebcc5e2c5",
+              "name": "data_inicio",
+              "value": "={{ $json.data_inicio }}",
+              "type": "string"
+            },
+            {
+              "id": "082a230f-2615-4ef0-8b65-f0512b615fb4",
+              "name": "nome",
+              "value": "={{ $json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "e7afc255-7387-4d93-821a-6db924fee0d2",
+              "name": "cpf",
+              "value": "={{ $json.cpf }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        64
+      ],
+      "id": "c25c13a6-2b38-45f1-bfc0-9e103aa87df5",
+      "name": "NULL(F)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        560,
+        288
+      ],
+      "id": "eb81841a-9366-4d5c-8527-cd3a636b64dd",
+      "name": "REROUTE-NF"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        704,
+        288
+      ],
+      "id": "9dd84799-edc3-4654-97a5-6d4ff3ffa89d",
+      "name": "REROUTE-BF"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        848,
+        288
+      ],
+      "id": "782c6bcb-ba1e-425f-b02d-39d57adc5f75",
+      "name": "REROUTE-AF"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        560,
+        464
+      ],
+      "id": "373372f1-fa23-4265-a683-fff3ebde2616",
+      "name": "REROUTE-AJ"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        704,
+        464
+      ],
+      "id": "fb93ef8b-a264-4b20-85b6-96fcc3f0f7bf",
+      "name": "REROUTE-BJ"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        848,
+        464
+      ],
+      "id": "cc315ab9-3cbf-4fec-8702-db60f4bb3c56",
+      "name": "REROUTE-NJ"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "50ce76ce-3c40-450a-ac4c-c3165da63a22",
+              "name": "motivo",
+              "value": "leitura_muito_alta",
+              "type": "string"
+            },
+            {
+              "id": "664b2d17-5820-43e8-8db7-12581d3e4895",
+              "name": "id",
+              "value": "={{ $('Calcula Score (J)').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "20b6ef98-c82e-451b-b1f2-fc2b3f2f8503",
+              "name": "fk_contratos",
+              "value": "={{ $('Calcula Score (J)').item.json.fk_contratos }}",
+              "type": "string"
+            },
+            {
+              "id": "451f6437-55b1-4007-a0a3-bbd522923e55",
+              "name": "data_leitura",
+              "value": "={{ $('Calcula Score (J)').item.json.data_leitura }}",
+              "type": "string"
+            },
+            {
+              "id": "8bc720e3-f499-41d9-96f3-9ad6bef86ca7",
+              "name": "valor",
+              "value": "={{ $('Calcula Score (J)').item.json.valor }}",
+              "type": "string"
+            },
+            {
+              "id": "dc4e6de1-061f-4105-aaf1-780ebcc5e2c5",
+              "name": "data_inicio",
+              "value": "={{ $('Calcula Score (J)').item.json.data_inicio }}",
+              "type": "string"
+            },
+            {
+              "id": "082a230f-2615-4ef0-8b65-f0512b615fb4",
+              "name": "nome",
+              "value": "={{ $('Calcula Score (J)').item.json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "e7afc255-7387-4d93-821a-6db924fee0d2",
+              "name": "cpf",
+              "value": "={{ $('Calcula Score (J)').item.json.cpf }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        816
+      ],
+      "id": "ca7a5461-733a-4c24-94be-79054bd368b5",
+      "name": "ALTA(J)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "50ce76ce-3c40-450a-ac4c-c3165da63a22",
+              "name": "motivo",
+              "value": "leitura_muito_baixa",
+              "type": "string"
+            },
+            {
+              "id": "664b2d17-5820-43e8-8db7-12581d3e4895",
+              "name": "id",
+              "value": "={{ $('Calcula Score (J)').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "20b6ef98-c82e-451b-b1f2-fc2b3f2f8503",
+              "name": "fk_contratos",
+              "value": "={{ $('Calcula Score (J)').item.json.fk_contratos }}",
+              "type": "string"
+            },
+            {
+              "id": "451f6437-55b1-4007-a0a3-bbd522923e55",
+              "name": "data_leitura",
+              "value": "={{ $('Calcula Score (J)').item.json.data_leitura }}",
+              "type": "string"
+            },
+            {
+              "id": "8bc720e3-f499-41d9-96f3-9ad6bef86ca7",
+              "name": "valor",
+              "value": "={{ $('Calcula Score (J)').item.json.valor }}",
+              "type": "string"
+            },
+            {
+              "id": "dc4e6de1-061f-4105-aaf1-780ebcc5e2c5",
+              "name": "data_inicio",
+              "value": "={{ $('Calcula Score (J)').item.json.data_inicio }}",
+              "type": "string"
+            },
+            {
+              "id": "082a230f-2615-4ef0-8b65-f0512b615fb4",
+              "name": "nome",
+              "value": "={{ $('Calcula Score (J)').item.json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "e7afc255-7387-4d93-821a-6db924fee0d2",
+              "name": "cpf",
+              "value": "={{ $('Calcula Score (J)').item.json.cpf }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        944
+      ],
+      "id": "3c8ee840-11bb-4794-9960-91dbe5002e5a",
+      "name": "BAIXA(J)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "50ce76ce-3c40-450a-ac4c-c3165da63a22",
+              "name": "motivo",
+              "value": "leitura_vazia",
+              "type": "string"
+            },
+            {
+              "id": "664b2d17-5820-43e8-8db7-12581d3e4895",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "20b6ef98-c82e-451b-b1f2-fc2b3f2f8503",
+              "name": "fk_contratos",
+              "value": "={{ $json.fk_contratos }}",
+              "type": "string"
+            },
+            {
+              "id": "451f6437-55b1-4007-a0a3-bbd522923e55",
+              "name": "data_leitura",
+              "value": "={{ $json.data_leitura }}",
+              "type": "string"
+            },
+            {
+              "id": "8bc720e3-f499-41d9-96f3-9ad6bef86ca7",
+              "name": "valor",
+              "value": "={{ $json.valor }}",
+              "type": "string"
+            },
+            {
+              "id": "dc4e6de1-061f-4105-aaf1-780ebcc5e2c5",
+              "name": "data_inicio",
+              "value": "={{ $json.data_inicio }}",
+              "type": "string"
+            },
+            {
+              "id": "082a230f-2615-4ef0-8b65-f0512b615fb4",
+              "name": "nome",
+              "value": "={{ $json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "e7afc255-7387-4d93-821a-6db924fee0d2",
+              "name": "cpf",
+              "value": "={{ $json.cpf }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        1072
+      ],
+      "id": "6c97b70c-22ed-4d5c-b513-bb9f42a5603e",
+      "name": "NULL(J)"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        576,
+        -80
+      ],
+      "id": "7fcfdff4-0261-4cc9-a47e-af768095ac68",
+      "name": "LEITURAS(F)"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        544,
+        928
+      ],
+      "id": "34b63e68-5fb5-4d4f-bd43-b3b153e2c782",
+      "name": "LEITURAS(J)"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Você é um sistema automático de avisos para clientes de uma empresa de energia solar.\n\nUma leitura de um cliente foi identificada como um outlier e assim provavelmente foi uma falha ou erro.\n\nSeu dever é escrever um E-mail simpático porém formal informando o cliente sobre o ocorrido. Para clareza e completude inclua informações para que o cliente entenda qual contrato causou a leitura e que leitura foi essa, inclua também possíveis explicações ou recomendações para o cliente com base no tipo de problema identificado na leitura.\n\nSeguem as informações para você assinar o email:\n{\n  \"nome_da_empresa\": \"Delfino Sunshine LTDA.\",\n  \"email_para_contato\": \"ajuda@delfino.com\",\n  \"telefone_para_contato\": \"\"+55 11 4002-8922\",\n  \"seu_nome\": \"Pianta\",\n  \"seu_cargo\": \"Robô\"\n}\n\nTipos de problemas nas leituras:\n{\n  \"leitura_muito_alta\": {\n    \"possiveis_motivos\": \"aparelhos novos, mudança de rotina, inversores com defeito\",\n    \"recomendacoes\": \"monitore o consumo diário, chamar ajuda técnica\"\n  },\n  \"leitura_muito_baixa\": {\n    \"possiveis_motivos\": \"objetos bloqueando painéis, crescimento de vegetação, sujeira nos painéis, cabos soltos, inversores com defeito, paineis danificados\",\n    \"recomendacoes\": \"inspecionar visualmente os paineis, agendar limpeza\"\n  },\n  \"leitura_vazia\": {\n    \"possíveis_motivos\": \"problemas de conectividade, inversor desligado ou com defeito, disjuntores desarmados, cabos desconectados\",\n    \"recomendacoes\": \"verificar se o inversor está ligado e conectado na WiFi, reiniciar sistema de monitoramento\"\n  }\n}\n\nESCREVA APENAS O CORPO DO EMAIL COM ASSINATURA. NÃO INCLUA ASSUNTO\n\nSeguem as informações do caso:",
+              "role": "system"
+            },
+            {
+              "content": "={\n  \"nome_do_cliente\":  \"{{ $json.nome }}\",\n  \"cpf_do_cliente\": \"{{ $json.cpf }}\",\n  \"id_da_leitura\": \"{{ $json.id }}\",\n  \"data_da_leitura\": \"{{ $json.data_leitura }}\",\n  \"valor_da_leitura\": {{ $json.valor }},\n  \"motivo_do_problema\": \"{{ $json.motivo }}\",\n  \"id_do_contrato\": \"{{ $json.fk_contratos }}\",\n  \"data_de_inicio_do_contrato\": \"{{ $json.data_inicio }}\"\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        784,
+        -160
+      ],
+      "id": "5000cef4-6a74-4a32-b777-8beb6393ad22",
+      "name": "Mensagem Para Pessoas Físicas",
+      "credentials": {
+        "openAiApi": {
+          "id": "0jnjFJ4NwNbzXhBO",
+          "name": "My OpenAI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Você é um sistema automático de avisos para clientes de uma empresa que fornece serviços de energia solar para outras empresas.\n\nUma leitura de um cliente foi identificada como um outlier e assim provavelmente foi uma falha ou erro.\n\nSeu dever é escrever um E-mail formal informando o cliente sobre o ocorrido. Para clareza e completude inclua informações para que o cliente entenda qual contrato causou a leitura e que leitura foi essa, inclua também possíveis explicações ou recomendações para o cliente com base no tipo de problema identificado na leitura.\n\nSeguem as informações para você assinar o email:\n{\n  \"nome_da_empresa\": \"Delfino Sunshine LTDA.\",\n  \"email_para_contato\": \"ajuda@delfino.com\",\n  \"telefone_para_contato\": \"\"+55 11 4002-8922\",\n  \"seu_nome\": \"Pianta\",\n  \"seu_cargo\": \"Robô\"\n}\n\nTipos de problemas nas leituras:\n{\n  \"leitura_muito_alta\": {\n    \"possiveis_motivos\": \"novas demandas, inversores com defeito\",\n    \"recomendacoes\": \"agendar ajuda técnica, contratação de maior capacidade\"\n  },\n  \"leitura_muito_baixa\": {\n    \"possiveis_motivos\": \"crescimento de vegetação, sujeira nos painéis, problemas na instalação, equipamentos danificados\",\n    \"recomendacoes\": \"agendar serviço de inspeção de paineis, agendar limpeza de paineis, agendar manutenção ou troca de equipamentos\"\n  },\n  \"leitura_vazia\": {\n    \"possíveis_motivos\": \"problemas de conectividade, inversor desligado ou com defeito, disjuntores desarmados\",\n    \"recomendacoes\": \"reiniciar sistema de monitoramento, agendar assistência técnica, encomendar novos equipamentos\"\n  }\n}\n\nESCREVA APENAS O CORPO DO EMAIL COM ASSINATURA. NÃO INCLUA ASSUNTO\n\nSeguem as informações do caso:",
+              "role": "system"
+            },
+            {
+              "content": "={\n  \"nome_da_empresa_cliente\":  \"{{ $json.nome }}\",\n  \"cnpj_do_cliente\": \"{{ $json.cnpj }}\",\n  \"id_da_leitura\": \"{{ $json.id }}\",\n  \"data_da_leitura\": \"{{ $json.data_leitura }}\",\n  \"valor_da_leitura\": {{ $json.valor }},\n  \"motivo_do_problema\": \"{{ $json.motivo }}\",\n  \"id_do_contrato\": \"{{ $json.fk_contratos }}\",\n  \"data_de_inicio_do_contrato\": \"{{ $json.data_inicio }}\"\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        768,
+        832
+      ],
+      "id": "8030ae45-b184-4048-95b5-47d8c49c361c",
+      "name": "Mensagem Para Pessoas Jurídicas",
+      "credentials": {
+        "openAiApi": {
+          "id": "0jnjFJ4NwNbzXhBO",
+          "name": "My OpenAI Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1088,
+        928
+      ],
+      "id": "5d74649d-1653-4f75-8341-b862ab82d7b1",
+      "name": "Combina Endereço e Mensagem (J)"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1104,
+        -80
+      ],
+      "id": "bf9f5a7b-f54c-482d-8cff-ddcf696bb205",
+      "name": "Combina Endereço e Mensagem (F)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
+              "name": "N_af",
+              "value": "={{ $input.all().length }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1648,
+        464
+      ],
+      "id": "17b667f1-e474-4fdc-9e28-5deda69395b1",
+      "name": "COUNT AF",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
+              "name": "N_bf",
+              "value": "={{ $input.all().length }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1648,
+        592
+      ],
+      "id": "b4327eb1-ddca-4023-91f5-2389f924bf17",
+      "name": "COUNT BF",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
+              "name": "N_nf",
+              "value": "={{ $input.all().length }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1648,
+        720
+      ],
+      "id": "d015cf3d-4292-4735-9540-d2d329b1855b",
+      "name": "COUNT NF",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
+              "name": "N_aj",
+              "value": "={{ $input.all().length }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        528
+      ],
+      "id": "f6f25624-3d93-4690-9be4-2abf57468c77",
+      "name": "COUNT AJ",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
+              "name": "N_bj",
+              "value": "={{ $input.all().length }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        656
+      ],
+      "id": "613a0d22-6795-4292-8514-017e4c26a89b",
+      "name": "COUNT BJ",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "993bab66-6c67-4cfe-b978-0f0c7f9c662e",
+              "name": "N_nj",
+              "value": "={{ $input.all().length }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        784
+      ],
+      "id": "010ce129-7f09-4b77-896b-7368524d175f",
+      "name": "COUNT NJ",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2464,
+        256
+      ],
+      "id": "5bbfc09c-c1af-4cab-bf73-5edf4a360d23",
+      "name": "ESPERA"
+    },
+    {
+      "parameters": {
+        "content": "## Envia emails",
+        "height": 224,
+        "width": 384,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        -112
+      ],
+      "id": "030df330-1ec1-41b2-9d4c-83beb66db2f2",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "## Gera Retorno",
+        "height": 544,
+        "width": 528,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        400
+      ],
+      "id": "42f80e25-d1c9-44b5-ad57-58543cca7661",
+      "name": "Sticky Note11"
+    }
+  ],
+  "pinData": {
+    "Mensagem Para Pessoas Físicas": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezada Sra. Lucia Freitas Castro,\n\nEsperamos que este e-mail a encontre bem. \n\nIdentificamos uma anomalia na leitura referente ao seu contrato de energia solar, cujo ID é 10, com início em 21 de abril de 2024. A leitura realizada no dia 4 de julho de 2025 foi registrada como \"vazia\", o que indica que houve algum problema na medição de energia gerada.\n\nOs possíveis motivos para essa leitura vazia podem incluir problemas de conectividade, o inversor desligado ou com defeito, disjuntores desarmados ou cabos desconectados. Para resolver essa situação, recomendamos que você verifique se o seu inversor está ligado e conectado à rede Wi-Fi, além de tentar reiniciar o sistema de monitoramento.\n\nSe você tiver dificuldade em realizar essas verificações ou se a situação persistir, não hesite em nos contatar para que possamos ajudá-la com a solução.\n\nAgradecemos pela sua compreensão e estamos à disposição para qualquer outra dúvida.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Leonardo Cavalcanti Silva,\n\nEspero que esteja bem!\n\nEstamos entrando em contato para informar que a leitura do seu sistema de energia solar, registrada no dia 5 de julho de 2025, identificou um problema que a classificou como \"leitura vazia\". Essa anomalia foi detectada no seu contrato de número 7, cujo início está datado de 5 de abril de 2024.\n\nAs causas comuns para uma leitura vazia podem incluir problemas de conectividade, o inversor desligado ou com defeito, disjuntores desarmados ou cabos desconectados. Para resolver essa situação, recomendamos que você verifique se o inversor está ligado e conectado à rede WiFi, assim como reiniciar o sistema de monitoramento.\n\nPor favor, caso necesite de assistência técnica ou mais informações, não hesite em nos contatar através do nosso e-mail suporte: ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nEstamos à disposição para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado João Souza Rocha,\n\nEsperamos que você esteja bem.\n\nEstamos entrando em contato para informar que identificamos uma anomalia na leitura do seu consumo de energia solar referente ao contrato de número 4, que teve início em 19 de julho de 2022. A leitura realizada no dia 5 de julho de 2025 apresentou um valor vazio, o que sugere a possibilidade de um problema na leitura dos dados.\n\nEsse tipo de situação pode ocorrer devido a alguns motivos, como problemas de conectividade, o inversor estar desligado ou com defeito, disjuntores desarmados ou cabos desconectados. Para resolver essa questão, recomendamos que você verifique se o inversor está ligado e corretamente conectado à sua rede Wi-Fi. Além disso, reiniciar o sistema de monitoramento pode ajudar a restabelecer a comunicação.\n\nCaso precise de assistência técnica ou se a situação persistir, não hesite em nos contatar.\n\nEstamos à disposição para ajudar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Sr. João Souza Rocha,\n\nEsperamos que esta mensagem o encontre bem. \n\nIdentificamos uma anomalia na leitura registrada referente ao seu contrato de energia solar, de número 4, que teve início em 19 de julho de 2022. A leitura realizada no dia 5 de julho de 2025 foi considerada uma \"leitura vazia\", o que pode indicar um problema de conectividade ou um dos seguintes motivos:\n\n- Inversor desligado ou com defeito\n- Disjuntores desarmados\n- Cabos desconectados\n\nPara resolver essa situação, recomendamos as seguintes ações:\n\n1. Verifique se o inversor está ligado e conectado à rede WiFi.\n2. Reinicie o sistema de monitoramento para garantir que esteja funcionando corretamente.\n\nCaso tenha dúvidas ou precise de assistência técnica, não hesite em nos contatar por meio do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAgradecemos pela sua atenção e estamos aqui para ajudá-lo!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Sr. João Souza Rocha,\n\nEsperamos que este e-mail o encontre bem.\n\nEstamos entrando em contato para informar que a leitura do seu sistema de energia solar, referente ao contrato de número 4, datada de 6 de julho de 2025, foi identificada como uma leitura vazia. Isso pode ocorrer por alguns fatores, como problemas de conectividade, o inversor desligado ou com defeito, disjuntores desarmados ou cabos desconectados.\n\nPara resolver essa situação, recomendamos que verifique se o inversor está ligado e conectado à rede Wi-Fi. Além disso, sugerimos reiniciar o sistema de monitoramento para tentar restabelecer a comunicação.\n\nCaso precise de assistência técnica, estamos à disposição para ajudar. Não hesite em nos contatar por meio deste e-mail ou pelo telefone +55 11 4002-8922.\n\nAgradecemos pela sua atenção e colaboração.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Diego Cavalcanti Costa,\n\nEspero que este e-mail o encontre bem.\n\nEntramos em contato para informá-lo sobre uma leitura identificada em seu contrato de número 11, datada de 08 de julho de 2025, que apresentou uma anomalia considerado como uma leitura vazia. Isso pode ter ocorrido por diversos motivos, como problemas de conectividade, inversor desligado ou com defeito, disjuntores desarmados, ou cabos desconectados.\n\nPara resolver essa situação, recomendamos que você verifique se o inversor está ligado e conectado à sua rede Wi-Fi. Caso a leitura continue apresentando problemas, sugerimos reiniciar o sistema de monitoramento.\n\nSe precisar de assistência adicional, não hesite em nos contatar pelos nossos canais de atendimento.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Sr. Diego Cavalcanti Costa,\n\nEsperamos que esteja bem!\n\nEstamos entrando em contato para informar que, ao revisar as leituras do seu sistema de energia solar referente ao contrato nº 11, identificado com início em 16 de janeiro de 2024, notamos uma leitura vazia registrada no dia 9 de julho de 2025. Isso significa que não foi possível captar informações sobre a produção de energia no dia mencionado.\n\nAs causas mais comuns para esse ocorrido podem incluir problemas de conectividade, como um inversor que pode estar desligado ou apresentando algum defeito, disjuntores desarmados ou cabos desconectados.\n\nPara resolver essa situação, recomendamos que você verifique o seguinte:\n1. Confirme se o inversor está ligado e conectado à sua rede Wi-Fi.\n2. Reinicie o sistema de monitoramento, se isso for possível.\n\nCaso precise de ajuda adicional ou encontre dificuldades durante a verificação, não hesite em entrar em contato com nossa equipe técnica. Estamos à disposição para ajudar!\n\nAgradecemos pela sua atenção e pela escolha da Delfino Sunshine LTDA. como sua fornecedora de energia solar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezada Sra. Lucia Freitas Castro,\n\nEspero que esta mensagem a encontre bem. \n\nIdentificamos uma irregularidade na sua leitura de medição referente ao contrato número 10, que teve início em 21 de abril de 2024. A leitura datada de 9 de julho de 2025 foi classificada como \"vazia\", o que pode indicar um problema em nosso sistema de monitoramento.\n\nAs possíveis causas para essa leitura vazia incluem problemas de conectividade, o inversor estando desligado ou apresentando defeito, disjuntores desarmados ou cabos desconectados. Para resolver essa situação, recomendamos que você verifique se o inversor está ligado e devidamente conectado às redes WiFi. Além disso, pode ser útil reiniciar o sistema de monitoramento.\n\nCaso precise de assistência adicional, não hesite em entrar em contato com nossa equipe através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922. Estamos aqui para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezada Sra. Lucia Freitas Castro,\n\nEspero que esteja bem. \n\nGostaríamos de informá-la sobre uma questão relacionada à leitura de sua instalação de energia solar, registrada sob o contrato ID 10, com início em 21 de abril de 2024. Em nossa análise, identificamos que a leitura realizada no dia 9 de julho de 2025 foi considerada como \"vazia\", o que significa que não foram captados dados de consumo.\n\nAs causas para uma leitura vazia podem incluir problemas de conectividade, desligamento do inversor, disjuntores desarmados ou cabos desconectados. Para solucionar este inconveniente, recomendamos que verifique se o inversor está ligado e devidamente conectado à rede Wi-Fi. Também sugerimos que reinicie o sistema de monitoramento para garantir que esteja funcionando corretamente.\n\nCaso persistam dúvidas ou se necessitar de assistência técnica, não hesite em nos contatar.\n\nEstamos à disposição.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Leonardo Cavalcanti Silva,\n\nEspero que este e-mail o encontre bem. \n\nEstamos entrando em contato para informar que identificamos uma anomalia na leitura de medição do seu sistema solar, referente ao seu contrato nº 7, datado de início em 05 de abril de 2024. A leitura registrada no dia 11 de julho de 2025 não apresentou dados válidos, o que chamamos de \"leitura vazia\".\n\nEsse problema pode ocorrer devido a alguns fatores, como: problemas de conectividade, inversor desligado ou com defeito, disjuntores desarmados, ou cabos desconectados. Para solucionar essa questão, recomendamos que você verifique se o inversor está ligado e conectado à rede WiFi. Caso tenha dúvidas, sugerimos reiniciar o sistema de monitoramento.\n\nSe precisar de assistência técnica, estamos à disposição para ajudar. Por favor, não hesite em nos contatar. Seu conforto e satisfação são nossa prioridade.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Caro Sr. Rodrigo Fernandes Cunha,\n\nEsperamos que você esteja bem.\n\nEstamos entrando em contato para informar que a leitura registrada em seu contrato n.º 2, datada de 11 de julho de 2025, foi identificada como uma leitura vazia. Infelizmente, isso pode indicar uma falha no sistema.\n\nAs possíveis causas para essa situação podem incluir problemas de conectividade, o inversor desligado ou com defeito, disjuntores desarmados ou cabos desconectados. Para solucionar essa questão, recomendamos que verifique se o inversor está corretamente ligado e conectado à rede Wi-Fi. Além disso, reiniciar o sistema de monitoramento pode ajudar a restabelecer as leituras.\n\nCaso precise de assistência para resolver essa situação ou se não souber como proceder, não hesite em nos contatar.\n\nEstamos à disposição para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Diego Cavalcanti Costa,\n\nEspero que este e-mail o encontre bem. \n\nIdentificamos que a leitura referente ao seu contrato de energia solar (ID: 11), realizada no dia 11 de julho de 2025, foi registrada como uma leitura vazia. Esse tipo de leitura pode ser causado por alguns fatores, como problemas de conectividade, inversor desligado ou com defeito, disjuntores desarmados ou cabos desconectados.\n\nPara resolver essa situação, recomendamos que você verifique se o seu inversor está ligado e conectado à rede Wi-Fi. Em caso de necessidade, reinicie o sistema de monitoramento. \n\nSe precisar de assistência adicional, não hesite em nos contatar. Estamos aqui para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado João Souza Rocha,\n\nEspero que você esteja bem!\n\nEstamos entrando em contato para informar sobre uma anomalia identificada em sua leitura de consumo de energia do contrato de número 4, iniciado em 19 de julho de 2022. A leitura realizada no dia 12 de julho de 2025 apresentou um valor de leitura vazio, o que pode indicar um possível problema no seu sistema.\n\nOs motivos que podem ter causado essa leitura vazia incluem problemas de conectividade, como o inversor desligado ou com defeito, disjuntores desarmados ou cabos desconectados. Para resolver essa situação, recomendamos que você verifique se o inversor está ligado e conectado à rede Wi-Fi. Caso necessário, reinicie o sistema de monitoramento.\n\nSe precisar de assistência adicional, não hesite em entrar em contato com nosso suporte.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezada Lucia Freitas Castro,\n\nEsperamos que você esteja bem.\n\nEstamos entrando em contato para informar uma anomalia que identificamos em sua leitura de energia solar referente ao contrato de número 10, iniciado em 21 de abril de 2024. Na data de 14 de julho de 2025, a leitura registrada foi considerada vazia, o que pode indicar um problema no sistema de monitoramento.\n\nEssa leitura vazia pode ser causada por alguns fatores, entre eles: problemas de conectividade, o inversor estar desligado ou com defeito, disjuntores desarmados ou até mesmo cabos desconectados.\n\nPara resolver essa situação, recomendamos que você verifique se o inversor está ligado e conectado à sua rede Wi-Fi. Caso não tenha sucesso, você poderá tentar reiniciar o sistema de monitoramento. Se a situação persistir, não hesite em buscar nossa assistência técnica.\n\nEstamos à disposição para qualquer dúvida ou necessidade de suporte que você possa ter. Será um prazer ajudar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Sr. Diego Cavalcanti Costa,\n\nEsperamos que esteja bem!\n\nEstamos entrando em contato para informar que a leitura de seu sistema de energia solar, referente ao contrato nº 11, realizada em 14 de julho de 2025, foi identificada como uma leitura vazia. Isso significa que não conseguimos capturar dados pertinentes ao seu consumo de energia.\n\nAs possíveis causas para essa leitura vazia podem incluir problemas de conectividade, inversor desligado ou com defeito, disjuntores desarmados ou cabos desconectados. Para solucionar essa questão, recomendamos que você verifique se o inversor está ligado e corretamente conectado à rede WiFi. Se necessário, reinicie o sistema de monitoramento.\n\nSe precisar de orientação adicional ou se a situação persistir, não hesite em entrar em contato conosco. Estamos à disposição para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado João Souza Rocha,\n\nEsperamos que você esteja bem!\n\nGostaríamos de informar que identificamos uma anomalia na leitura de consumo de energia referente ao seu contrato (ID: 4), datada de 15 de julho de 2025. Infelizmente, essa leitura foi registrada como vazia.\n\nEsse tipo de problema pode ocorrer devido a alguns motivos, como problemas de conectividade, o inversor estar desligado ou com defeito, disjuntores desarmados ou até mesmo cabos desconectados. \n\nPara resolver essa situação, recomendamos que você verifique se o inversor está ligado e se está conectado à rede WiFi. Também sugerimos reiniciar o sistema de monitoramento para garantir que tudo esteja funcionando corretamente.\n\nSe precisar de assistência adicional ou se a situação persistir, por favor, não hesite em nos contatar. Estamos aqui para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Senhor Diego Cavalcanti Costa,\n\nEsperamos que esta mensagem o encontre bem.\n\nGostaríamos de informar que identificamos uma anomalia na leitura de energia solar referente ao seu contrato, identificado pelo ID 11, na data de 16 de julho de 2025. O valor da leitura apresentou-se como vazio, o que indica que pode haver um problema técnico.\n\nOs possíveis motivos para essa leitura vazia podem incluir questões de conectividade, o inversor podendo estar desligado ou com defeito, disjuntores desarmados ou cabos desconectados. Para solucionar essa situação, recomendamos que verifique se o inversor está ligado e conectado à rede WiFi. Caso necessário, você pode tentar reiniciar o sistema de monitoramento.\n\nSe precisar de ajuda adicional ou se o problema persistir, não hesite em nos contatar.\n\nAgradecemos pela sua atenção e estamos à disposição para ajudá-lo.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado João Souza Rocha,\n\nEspero que esteja bem!\n\nEstamos entrando em contato para informá-lo sobre uma anomalia que identificamos na leitura do seu sistema de energia solar referente ao contrato número 4, com início em 19 de julho de 2022. A leitura realizada em 18 de julho de 2025 apresentou uma incongruência, sendo classificada como \"leitura vazia\".\n\nEsse tipo de situação pode ocorrer devido a alguns fatores, tais como problemas de conectividade, o inversor estar desligado ou com defeito, disjuntores desarmados, ou cabos desconectados.\n\nRecomendamos que você verifique se o inversor está ligado e devidamente conectado à rede Wi-Fi. Caso ainda haja dúvidas ou problemas, sugerimos também reiniciar o sistema de monitoramento. Se precisar de assistência técnica, por favor, não hesite em nos contatar.\n\nFicamos à disposição para ajudar no que for necessário.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Diego Cavalcanti Costa,\n\nEsperamos que você esteja bem!\n\nEstamos entrando em contato para informar que a leitura registrada em seu contrato de energia solar, de ID 11, na data de 19 de julho de 2025, foi identificada como uma leitura vazia. Isso pode ocorrer devido a problemas de conectividade, como o inversor desligado ou com defeito, disjuntores desarmados ou cabos desconectados.\n\nPara resolver essa situação, recomendamos que você verifique se o inversor está ligado e conectado à rede Wi-Fi. Caso necessário, tente reiniciar o sistema de monitoramento para restabelecer a comunicabilidade. \n\nEstamos à disposição para qualquer assistência que você possa precisar. Se precisar de ajuda técnica mais detalhada, não hesite em entrar em contato conosco.\n\nAgradecemos pela sua compreensão e cooperação.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Leonardo Cavalcanti Silva,\n\nEspero que este e-mail o encontre bem!\n\nEstamos entrando em contato para informar que identificamos uma inconsistência na leitura do seu sistema de energia solar referente ao contrato nº 7, iniciado em 5 de abril de 2024. A leitura realizada no dia 21 de julho de 2025 foi registrada como vazia, o que pode indicar alguns problemas que precisamos tentar solucionar juntos.\n\nAs possíveis causas para a leitura vazia são: problemas de conectividade, o inversor desligado ou com defeito, disjuntores desarmados ou cabos desconectados. Para solucionar essa situação, recomendamos que você:\n\n1. Verifique se o inversor está ligado e se está corretamente conectado à sua rede WiFi.\n2. Reinicie o sistema de monitoramento para verificar se a leitura é atualizada.\n\nSe precisar de assistência técnica ou se notar algum problema que não consiga resolver, não hesite em nos contatar.\n\nAgradecemos pela sua atenção e ficamos à disposição para qualquer dúvida.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezada Lucia Freitas Castro,\n\nEsperamos que você esteja bem!\n\nEstamos entrando em contato para informar que identificamos uma anomalia na leitura do seu sistema de energia solar referente ao contrato de número 10, com data de início em 21 de abril de 2024. A leitura registrada no dia 24 de julho de 2025 apresentou um valor vazio, o que sugere que pode ter ocorrido algum problema na coleta de dados.\n\nEsse tipo de leitura vazia pode ocorrer por diversos motivos, como problemas de conectividade, o inversor estar desligado ou com defeito, disjuntores desarmados ou cabos desconectados. Para resolver essa situação, recomendamos que você verifique se o inversor está ligado e corretamente conectado à sua rede Wi-Fi. Além disso, pode ser útil reiniciar o sistema de monitoramento.\n\nCaso precise de assistência adicional ou não tenha acesso ao inversor, fique à vontade para nos contatar. Estamos à disposição para ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado Sr. Diego Cavalcanti Costa,\n\nEspero que este e-mail encontre você bem.\n\nEstamos entrando em contato para informar que a leitura do seu contrato (ID: 11), realizada no dia 26 de julho de 2025, apresentou um resultado que consideramos atípico. Registramos uma leitura vazia, que pode ocorrer devido a alguns fatores, como problemas de conectividade, o inversor estar desligado ou com defeito, disjuntores desarmados ou cabos desconectados.\n\nPara resolver essa questão, recomendamos que você verifique se o inversor está ligado e devidamente conectado à rede Wi-Fi. Além disso, sugerimos reiniciar o sistema de monitoramento para reestabelecer a comunicação.\n\nSe após essas verificações o problema persistir, não hesite em nos contatar para que possamos auxiliar você da melhor maneira possível.\n\nAgradecemos pela compreensão e permanecemos à disposição para qualquer esclarecimento.\n\nAtenciosamente,\n\nPianta  \nRobô   \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezada Lucia Freitas Castro,\n\nEsperamos que esteja bem. \n\nIdentificamos uma leitura registrada em seu contrato de energia solar (ID: 10) no dia 26 de julho de 2025, que foi classificada como uma \"leitura vazia\". Isso pode ocorrer devido a problemas de conectividade, ou quando o inversor está desligado ou com defeito, disjuntores desarmados, ou cabos desconectados. \n\nPara solucionar essa situação, recomendamos que você verifique se o seu inversor está ligado e conectado à rede Wi-Fi. Além disso, sugerimos reiniciar o sistema de monitoramento para restabelecer a comunicação. Caso o problema persista, não hesite em nos contatar para que possamos ajudá-la de forma mais detalhada.\n\nSe precisar de qualquer assistência adicional, estamos à disposição.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezada Sra. Lucia Freitas Castro,\n\nEsperamos que esteja bem!\n\nEstamos entrando em contato para informá-la sobre uma anomalia identificado em sua leitura de energia solar referente ao seu contrato de número 10, iniciado em 21 de abril de 2024. A leitura realizada no dia 29 de julho de 2025 foi registrada como \"leitura vazia\", o que normalmente indica a possibilidade de problemas de conectividade, do inversor estar desligado ou com defeito, ou até mesmo disjuntores desarmados ou cabos desconectados.\n\nCom base nessa situação, recomendamos que, por gentileza, verifique se o seu inversor está ligado e conectado à rede Wi-Fi. Caso a situação persista, sugerimos a reinicialização do sistema de monitoramento para tentar retomar o funcionamento normal.\n\nEstamos à disposição para ajudá-la com qualquer dúvida ou se precisar de assistência adicional. Você pode entrar em contato conosco pelo telefone +55 11 4002-8922 ou pelo e-mail ajuda@delfino.com.\n\nAgradecemos pela sua compreensão e ficamos no aguardo de sua resposta.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado João Souza Rocha,\n\nEspero que este e-mail o encontre bem. \n\nEstamos entrando em contato para informá-lo sobre uma leitura identificada em seu contrato de energia solar, que parece ter apresentado um problema. A leitura realizada em 30 de julho de 2025, referente ao seu contrato com início em 19 de julho de 2022, foi classificada como \"vazia\". Essa situação pode ocorrer por alguns fatores, como problemas de conectividade, o inversor estar desligado ou com defeito, disjuntores desarmados ou cabos desconectados.\n\nRecomendamos que você verifique se o inversor está ligado e conectado à sua rede WiFi. Caso não tenha certeza de como proceder, reiniciar o sistema de monitoramento pode ajudar a resolver o problema. \n\nSe precisar de assistência adicional, não hesite em entrar em contato conosco. Estamos aqui para ajudar! \n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezada Lucia Freitas Castro,\n\nEsperamos que esteja bem! \n\nEstamos entrando em contato para informar que identificamos uma anomalia na leitura do seu sistema solar referente ao contrato de número 10, iniciado em 21 de abril de 2024. A leitura registrada em 31 de julho de 2025 foi considerada vazia, o que pode ocorrer por algumas razões, como problemas de conectividade, o inversor estar desligado ou com defeito, disjuntores desarmados ou cabos desconectados.\n\nRecomendamos que você verifique se o inversor está ligado e conectado à rede WiFi. Além disso, sugerimos reiniciar o sistema de monitoramento para garantir que tudo esteja funcionando corretamente.\n\nCaso você precise de assistência técnica ou tenha qualquer outra dúvida, não hesite em nos contatar. Ficaremos felizes em ajudar!\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      }
+    ],
+    "Mensagem Para Pessoas Jurídicas": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Limpa EPP,\n\nEsperamos que esta mensagem o(a) encontre bem.\n\nEstamos contatando você para informá-lo(a) sobre uma anomalia detectada na leitura do seu sistema de energia solar referente ao contrato ID 18, que teve início em 05 de fevereiro de 2022. A leitura datada de 20 de agosto de 2025 apresentou um valor de 2999.990, considerado um outlier e possivelmente resultante de uma falha ou erro.\n\nEsse valor extremamente elevado pode ser atribuído a algumas causas, como novas demandas ou a presença de inversores com defeito. Para garantir que o sistema está operando de forma eficiente e evitar possíveis problemas futuros, recomendamos as seguintes ações:\n\n1. Agendar a ajuda técnica de nossa equipe especializada para analisar a situação.\n2. Considerar a possibilidade de contratação de maior capacidade, caso esteja enfrentando um aumento na demanda de energia.\n\nEstamos à disposição para auxiliá-lo(a) nesse processo. Por favor, não hesite em nos contatar para agendar uma visita técnica ou se tiver quaisquer perguntas.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezados,\n\nEstamos entrando em contato para informar sobre uma anomalia identificada na leitura referente ao seu contrato de energia solar (ID: 18), que teve início em 05 de fevereiro de 2022. A leitura registrada em 22 de julho de 2025 apresentou um valor de 731.821, o que foi classificado como uma leitura muito alta.\n\nAs possíveis causas para esse tipo de leitura incluem novas demandas de energia, problemas com os inversores, entre outros. Para garantir que sua instalação esteja operando da melhor forma possível, recomendamos as seguintes ações:\n\n1. Agendar uma visita de assistência técnica para avaliação do sistema.\n2. Considerar a contratação de equipamentos com maior capacidade, caso tenha havido um aumento significativo no consumo de energia.\n\nEstamos à disposição para ajudá-lo a resolver essa situação e garantir que seus serviços de energia solar estejam sempre em funcionamento adequado. \n\nCaso tenha alguma dúvida ou precise de mais informações, entre em contato conosco pelos canais abaixo.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) representante da Limpa EIRELI,\n\nEsperamos que esteja bem.\n\nEstamos entrando em contato para informar que a leitura de energia solar referente ao contrato de ID 20, iniciado em 4 de maio de 2025, apresentava um valor atípico em nossa análise. A leitura registrada em 15 de agosto de 2025 foi de 1867.000, o que é considerado uma leitura muito alta.\n\nEsse tipo de leitura pode ser causado por fatores como novas demandas de energia ou possivelmente defeitos em inversores. Para garantir que seu sistema esteja funcionando adequadamente e para evitar possíveis inconvenientes, recomendamos que você considere as seguintes ações:\n\n1. Agendar assistência técnica para verificar o estado dos inversores e demais componentes de seu sistema.\n2. Avaliar a possibilidade de contratação de maior capacidade de geração, se houver um aumento significativo na demanda de energia.\n\nEstamos à disposição para ajudar com qualquer uma dessas opções e garantir que seu sistema de energia solar esteja operando de forma ideal.\n\nCaso tenha dúvidas ou precise de mais informações, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável pela Limpa EPP,\n\nEsperamos que você esteja bem.\n\nEstamos entrando em contato para informar que, na leitura realizada em 2 de julho de 2025, identificamos uma anomalia referente ao seu contrato de energia solar, registrado sob o ID 18, iniciado em 5 de fevereiro de 2022. A leitura registrada foi classificada como \"vazia\".\n\nAs possíveis causas que podem ter gerado essa leitura incluem problemas de conectividade, um inversor desligado ou com defeito, ou disjuntores desarmados. \n\nPara resolver essa situação, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento, verificando se o problema persiste.\n2. Agendar uma assistência técnica para uma avaliação mais detalhada do sistema.\n3. Caso necessário, considerar a encomenda de novos equipamentos para garantir o pleno funcionamento do sistema.\n\nÉ importante que essas questões sejam endereçadas o quanto antes para evitar impactos no fornecimento de energia. \n\nSe precisar de qualquer assistência ou mais informações, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) representante da Sun EPP,\n\nEsperamos que esteja bem. \n\nEntramos em contato para informar que identificamos um problema na leitura referente ao seu contrato de número 17, realizado na data de 3 de julho de 2025. Esta leitura foi considerada uma \"leitura vazia\", o que pode indicar problemas de conectividade, inversor desligado ou com defeito, ou mesmo disjuntores desarmados.\n\nRecomendamos as seguintes ações:\n\n1. **Reiniciar o sistema de monitoramento**: Verifique se o sistema está devidamente ativo e reinicie-o, caso necessário.\n2. **Agendar assistência técnica**: Se o problema persistir, sugerimos entrar em contato com nossa equipe técnica para que possam realizar uma avaliação detalhada.\n3. **Encomendar novos equipamentos**: Caso seja identificado que algum equipamento está com defeito, pode ser necessário considerar a substituição.\n\nEstamos à disposição para auxiliá-lo(a) em qualquer um desses passos. Se precisar de ajuda adicional, não hesite em nos contatar através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) representante da Limpa EPP,\n\nEsperamos que esta mensagem o(a) encontre bem.\n\nEstamos entrando em contato para informá-lo(a) sobre uma anomalia identificada em nossa leitura recente, referente ao seu contrato número 18, com início em 5 de fevereiro de 2022. A leitura realizada no dia 4 de julho de 2025 foi considerada como uma \"leitura vazia\", o que pode indicar problemas com a conectividade do sistema, ou que o inversor pode estar desligado ou com defeito, além de possíveis disjuntores desarmados.\n\nSugerimos as seguintes ações para resolver essa situação:\n- Verifique se o sistema de monitoramento precisa ser reiniciado.\n- Caso o problema persista, recomendamos agendar uma assistência técnica para uma análise detalhada.\n- Em casos mais graves, será necessário encomendar novos equipamentos.\n\nEstamos à disposição para ajudá-lo(a) a solucionar essa questão da melhor maneira possível. Para agendar um suporte técnico, entre em contato conosco através do telefone +55 11 4002-8922 ou pelo e-mail ajuda@delfino.com.\n\nAgradecemos pela sua atenção e aguardamos seu contato.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável pelo contrato da Sun EPP,\n\nEstamos entrando em contato para informar que uma leitura do seu sistema de energia solar foi identificada como uma anomalia. A leitura vazia registrada sob o ID 14 no dia 04 de julho de 2025 refere-se ao contrato de ID 17, que iniciou em 28 de junho de 2025.\n\nAs possíveis causas para essa leitura vazia podem incluir problemas de conectividade, um inversor que pode estar desligado ou com defeito, ou disjuntores desarmados. Para garantir o funcionamento adequado do seu sistema, recomendamos as seguintes ações:\n\n1. Reinicie o sistema de monitoramento;\n2. Caso a situação persista, agende uma assistência técnica para identificação mais precisa do problema;\n3. Considere a possibilidade de encomendar novos equipamentos se necessário.\n\nEstamos à disposição para auxiliá-lo no que for preciso. Se desejar agendar uma visita técnica ou tiver quaisquer dúvidas, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Sun EPP,\n\nEstamos entrando em contato para informar que uma leitura referente ao seu contrato de número 17, com data de início em 28 de junho de 2025, apresentou um valor vazio na data de 5 de julho de 2025. Essa situação é classificada como uma leitura vazia e pode indicar problemas que requerem atenção.\n\nOs possíveis motivos para esse tipo de leitura incluem:\n- Problemas de conectividade no sistema de monitoramento\n- Inversor desligado ou com defeito\n- Disjuntores desarmados\n\nPara resolver essa situação, recomendamos as seguintes ações:\n- Reiniciar o sistema de monitoramento para verificar se há restabelecimento da leitura\n- Agendar uma assistência técnica para inspeção dos equipamentos envolvidos\n- Considerar a encomenda de novos equipamentos, caso os atuais não estejam funcionando adequadamente\n\nEstamos à disposição para ajudar no que for necessário, e sugerimos que entre em contato conosco para agendar os serviços mencionados.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \nEmail: ajuda@delfino.com  \nTelefone: +55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente da Sun EPP,\n\nEsperamos que você esteja bem. \n\nEstamos entrando em contato para informar que foi identificada uma anomalia na leitura do seu sistema de energia solar, vinculada ao contrato de ID 17, em vigor desde 28 de junho de 2025. A leitura realizada no dia 5 de julho de 2025 foi considerada vazia, o que indica que não houve geração de energia registrada.\n\nAs possíveis causas para uma leitura vazia incluem problemas de conectividade, inversor desligado ou defeito, ou disjuntores desarmados. Para resolver esta situação, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar assistência técnica para avaliar os equipamentos.\n3. Considerar a encomenda de novos equipamentos, caso necessário.\n\nEstamos à disposição para ajudar na resolução deste problema. Caso tenha alguma dúvida ou precise agendar um serviço, entre em contato conosco através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAgradecemos pela sua atenção e confiança.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente,\n\nEsperamos que este e-mail o(a) encontre bem. \n\nEstamos entrando em contato para informar que a leitura da sua instalação de energia solar, identificada como ID 14, realizada no dia 7 de julho de 2025, apresentou um problema classificado como leitura vazia. Essa situação pode ocorrer devido a problemas de conectividade, inversor desligado ou com defeito, ou ainda disjuntores desarmados.\n\nO contrato relacionado a esta leitura é o de ID 17, que foi iniciado no dia 28 de junho de 2025.\n\nPara solucionar esse problema, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento, caso ainda não tenha sido feito.\n2. Se o problema persistir, agendar uma assistência técnica para verificar a instalação e os equipamentos.\n3. Em casos em que identificarmos a necessidade, podemos também encaminhar a encomenda de novos equipamentos.\n\nEstamos à disposição para ajudá-lo(a) e resolver qualquer questão que esteja afetando a performance de sua instalação. \n\nPor favor, não hesite em nos contatar através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente,\n\nEsperamos que esteja bem. \n\nGostaríamos de trazer à sua atenção uma questão relacionada à leitura de energia solar referente ao seu contrato de ID 17, iniciado em 28 de junho de 2025. Em nossa última verificação, datada de 7 de julho de 2025, identificamos uma leitura vazia com o ID 14. \n\nEsse tipo de leitura pode ser ocasionado por problemas de conectividade, inversor desligado ou com defeito, ou ainda disjuntores desarmados. Para solucionar essa questão e garantir o pleno funcionamento do seu sistema de energia solar, sugerimos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar uma assistência técnica para verificar o funcionamento do inversor e dos disjuntores.\n3. Considerar a encomenda de novos equipamentos, se necessário.\n\nPor favor, entre em contato conosco para que possamos ajudar na resolução desta situação. \n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente Limpa EPP,\n\nIdentificamos uma anomalia em sua leitura de energia solar referente ao contrato de número 18, que teve início em 5 de fevereiro de 2022. A leitura realizada em 7 de julho de 2025 apresentou um valor vazio, o que indica que pode ter ocorrido um problema no sistema.\n\nAs possíveis causas para este tipo de leitura vazia incluem: \n- Problemas de conectividade\n- Inversor desligado ou com defeito\n- Disjuntores desarmados\n\nRecomendamos que você tome as seguintes ações:\n- Reiniciar o sistema de monitoramento do seu inversor\n- Agendar uma assistência técnica para verificar o problema\n- Em casos mais extremos, considerar a encomenda de novos equipamentos, caso seja necessário\n\nEstamos à disposição para auxiliá-lo(a) no que for necessário. Por favor, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Sun EPP,\n\nEsperamos que este e-mail o(a) encontre bem. Estamos entrando em contato para informar que identificamos uma anomalia na leitura de seu sistema de energia solar, referente ao contrato de ID 17, celebrado em 28 de junho de 2025. A leitura realizada no dia 8 de julho de 2025 não foi registrada corretamente e está classificada como uma leitura vazia.\n\nEsse tipo de ocorrência pode ser causado por problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados. Recomendamos que você verifique os seguintes pontos:\n\n1. **Reinicie o sistema de monitoramento** - Às vezes, uma simples reinicialização pode resolver problemas de conectividade.\n2. **Agende assistência técnica** - Caso a reinicialização não resolva o problema, sugerimos entrar em contato com uma equipe técnica qualificada para uma avaliação detalhada.\n3. **Verifique os equipamentos** - Certifique-se de que não há disjuntores desarmados ou equipamentos que necessitem de manutenção ou troca.\n\nEstamos à disposição para ajudá-lo(a) com qualquer um desses procedimentos ou para agendar uma visita técnica. Por favor, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente Limpa EIRELI,\n\nEspero que este e-mail o(a) encontre bem.\n\nEstamos entrando em contato para informar que identificamos uma anomalia na leitura da sua geração de energia solar correspondente ao contrato ID 19, iniciado em 03 de fevereiro de 2024. A leitura realizada no dia 13 de julho de 2025 foi classificada como \"vazia\", o que pode indicar alguns problemas em sua instalação.\n\nOs possíveis motivos para essa leitura vazia incluem:\n\n- Problemas de conectividade\n- Inversor desligado ou com defeito\n- Disjuntores desarmados\n\nPara resolver essa situação, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento para verificar se a leitura é restaurada.\n2. Agendar uma assistência técnica para uma análise minuciosa do sistema.\n3. Considerar a encomenda de novos equipamentos, caso a falha persista.\n\nPara agendar um atendimento ou para qualquer questionamento adicional, sinta-se à vontade para nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente Limpa EPP,\n\nEsperamos que esteja bem. \n\nEstamos entrando em contato para informá-lo sobre uma anomalia detectada na leitura de energia solar referente ao seu contrato (ID: 18), iniciado em 05 de fevereiro de 2022. A leitura realizada no dia 13 de julho de 2025 foi identificada como uma \"leitura vazia\", o que indica que não foi possível captar o consumo de energia no momento.\n\nAs possíveis causas para essa situação incluem problemas de conectividade, o inversor desligado ou com defeito, e disjuntores desarmados. Para solucionar esse problema, recomendamos que você:\n\n1. Reinicie o sistema de monitoramento.\n2. Agende uma assistência técnica para verificar o funcionamento do inverter e dos disjuntores.\n3. Se necessário, considere encomendar novos equipamentos.\n\nEstamos à disposição para ajudá-lo a resolver essa questão da melhor maneira. Caso tenha alguma dúvida ou precise de assistência, não hesite em nos contatar pelo e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezados,\n\nEstamos entrando em contato para informar que uma leitura registrada em nosso sistema referente ao contrato ID 19 da empresa Limpa EIRELI (CNPJ: 55.786.898/0001-67) foi identificada como uma anomalia. A leitura foi realizada em 16 de julho de 2025, e apresentamos um valor vazio, o que caracteriza um problema de \"leitura vazia\".\n\nAs possíveis causas para essa situação podem incluir problemas de conectividade, um inversor desligado ou com defeito, ou disjuntores desarmados. Para resolver essa questão e garantir a continuidade e eficiência do seu sistema de energia solar, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento, verificando se o problema persiste.\n2. Agendar uma assistência técnica para uma inspeção mais detalhada.\n3. Considerar a encomenda de novos equipamentos, caso seja necessário.\n\nFicamos à disposição para qualquer esclarecimento ou para auxiliar nas próximas etapas. Você pode entrar em contato conosco pelo e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) representante da Limpa EIRELI,\n\nEspero que este e-mail o(a) encontre bem.\n\nEstamos entrando em contato para informar que uma leitura referente ao seu contrato (ID: 20), iniciado em 04 de maio de 2025, foi identificada como uma anomalia no nosso sistema. A leitura com ID 16, realizada em 17 de julho de 2025, apresentou um valor vazio, o que sugere um possível problema em nosso monitoramento.\n\nAs causas para esse tipo de leitura vazia podem incluir:\n\n- Problemas de conectividade no sistema\n- Inversor desligado ou com defeito\n- Disjuntores desarmados\n\nRecomendamos as seguintes ações para solucionar essa situação:\n\n1. Reiniciar o sistema de monitoramento, caso ainda não tenha sido feito.\n2. Agendar um atendimento com assistência técnica para investigar e corrigir qualquer falha.\n3. Se necessário, considerar a encomenda de novos equipamentos.\n\nEstamos à disposição para auxiliar em qualquer uma dessas recomendações ou para esclarecer eventuais dúvidas. Você pode nos contatar por e-mail ou telefone:\n\n- E-mail: ajuda@delfino.com\n- Telefone: +55 11 4002-8922\n\nAgradecemos pela compreensão e aguardamos seu retorno.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente,\n\nEsperamos que você esteja bem. Estamos entrando em contato para informar sobre uma leitura de medição de consumo referente ao seu contrato com a Delfino Sunshine LTDA., identificado como ID 18, e iniciado em 05 de fevereiro de 2022. \n\nRecentemente, identificamos uma leitura vazia registrada no dia 18 de julho de 2025, que pode indicar um problema com o seu sistema. Uma leitura vazia pode ocorrer por diversos motivos, como problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados.\n\nDiante disso, recomendamos que você:\n\n1. Reinicie o sistema de monitoramento.\n2. Caso o problema persista, agende assistência técnica com nossa equipe.\n3. Se necessário, considere a encomenda de novos equipamentos.\n\nPara agendar um atendimento ou para mais informações, ficamos à disposição.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) representante da Sun EPP,\n\nEsperamos que você esteja bem.\n\nEstamos entrando em contato para informar que uma leitura do seu sistema de energia solar, referente ao contrato de ID 17, datada de 19 de julho de 2025, foi identificada como uma leitura vazia. Essa situação pode ocorrer devido a problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados.\n\nRecomendamos que você tome algumas ações para solucionar essa questão:\n\n1. Reinicie o sistema de monitoramento.\n2. Caso a situação persista, sugerimos agendar uma assistência técnica para verificar o estado do sistema e dos equipamentos.\n3. Se necessário, considere encomendar novos equipamentos para garantir que o sistema funcione corretamente.\n\nEstamos à disposição para ajudar no que for necessário. Por favor, não hesite em nos contatar para agendar um suporte técnico ou para esclarecer quaisquer dúvidas.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \nEmail: ajuda@delfino.com  \nTelefone: +55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Limpa EPP,\n\nGostaríamos de informar que identificamos uma anomalia na leitura do seu sistema de energia solar referente ao contrato de ID 18, com início em 05 de fevereiro de 2022. A leitura realizada no dia 20 de julho de 2025 não continha dados, o que classifica este caso como uma \"leitura vazia\".\n\nOs possíveis motivos para essa leitura vazia podem incluir problemas de conectividade, o inversor estar desligado ou com defeito, ou até mesmo disjuntores desarmados. Para evitar problemas futuros e garantir o correto funcionamento do seu sistema, recomendamos as seguintes ações:\n\n1. Reinicie o sistema de monitoramento para verificar se a leitura se normaliza.\n2. Agende uma assistência técnica para uma análise detalhada do seu sistema.\n3. Em caso de necessidade, considere a encomenda de novos equipamentos.\n\nA sua satisfação é a nossa prioridade. Se precisar de mais informações ou auxílio adicional, não hesite em entrar em contato conosco.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \nemail: ajuda@delfino.com  \ntelefone: +55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente da Sun EPP,\n\nEsperamos que este e-mail o(a) encontre bem.\n\nEstamos entrando em contato para informá-lo de que uma leitura realizada em relação ao seu contrato (ID: 17), datada de 20 de julho de 2025, foi identificada como uma leitura vazia. Esta situação pode ter ocorrido devido a problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados.\n\nPara resolver essa questão e assegurar que seu sistema esteja operando normalmente, seguem nossas recomendações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar assistência técnica, caso o problema persista.\n3. Encomendar novos equipamentos, se necessário, para evitar futuras interrupções no serviço.\n\nEstamos à disposição para auxiliar você a resolver este inconveniente. Se precisar de ajuda, não hesite em nos contatar por meio do nosso e-mail ou telefone abaixo.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Limpa EPP,\n\nEsperamos que este e-mail o encontre bem.\n\nEstamos entrando em contato para informar que identificamos uma anomalia na leitura de energia solar referente ao seu contrato número 18, iniciado em 5 de fevereiro de 2022. A leitura registrada no dia 20 de julho de 2025 foi classificada como \"vazia\", o que pode indicar possíveis problemas na medição de sua geração de energia.\n\nAs causas mais comuns para uma leitura vazia incluem problemas de conectividade, o inversor estar desligado ou com defeito, ou ainda disjuntores desarmados. Para resolver essa situação, recomendamos seguir estas etapas:\n\n1. Tente reiniciar o sistema de monitoramento.\n2. Verifique se o inversor está ligado e em operação.\n3. Confira se os disjuntores estão devidamente armados.\n\nSe após essas verificações o problema persistir, sugerimos agendar uma assistência técnica com nossos profissionais ou, se necessário, encomendar novos equipamentos.\n\nAgradecemos a sua atenção e estamos à disposição para quaisquer dúvidas ou agendamentos. Por favor, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado cliente Limpa EIRELI,\n\nEsperamos que esteja bem.\n\nEstamos entrando em contato para informar sobre uma leitura de consumo referente ao seu contrato com ID 19, iniciado em 03 de fevereiro de 2024. A leitura registrada no dia 21 de julho de 2025 foi identificada como uma leitura vazia, o que pode indicar alguns problemas que podem estar afetando seu sistema de energia solar.\n\nAs possíveis causas para essa leitura vazia incluem:\n\n- Problemas de conectividade\n- Inversor desligado ou com defeito\n- Disjuntores desarmados\n\nPara resolver esta situação e garantir que seu sistema funcione adequadamente, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar um serviço de assistência técnica para verificar o estado do seu equipamento.\n3. Caso necessário, considerar a encomenda de novos equipamentos.\n\nEstamos à disposição para ajudar no que for preciso. Por favor, não hesite em nos contatar pelo e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente da Limpa EPP,\n\nEsperamos que esteja bem. \n\nEstamos entrando em contato para informá-lo sobre uma anomalia identificada em sua leitura de energia solar, referente ao contrato nº 18, iniciado em 05 de fevereiro de 2022. A leitura realizada no dia 21 de julho de 2025 apresentou um valor vazio, o que indica que pode haver um problema com o sistema de monitoramento de sua instalação.\n\nAs possíveis razões para essa leitura vazia incluem problemas de conectividade, um inversor desligado ou com defeito, ou disjuntores desarmados. Para solucionar essa situação, sugerimos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento;\n2. Agendar uma assistência técnica para verificar se há falhas no equipamento;\n3. Considerar a encomenda de novos equipamentos, caso necessário.\n\nRecomendamos que entre em contato conosco o mais breve possível para agendarmos as verificações necessárias. Aguardamos seu retorno para garantir que sua instalação esteja operando plenamente.\n\nPara mais informações ou para agendar um atendimento, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \nEmail: ajuda@delfino.com  \nTelefone: +55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável pela Limpa EIRELI,\n\nEspero que esta mensagem o(a) encontre bem.\n\nGostaríamos de informá-lo(a) que uma leitura referente ao seu contrato de número 19, datada de 22 de julho de 2025, foi identificada como uma \"leitura vazia\". Neste caso, isso pode indicar problemas como conectividade, inversor desligado ou com defeito, ou disjuntores desarmados. \n\nRecomendamos que verifique se o sistema de monitoramento está operando corretamente, podendo ser útil reiniciar o sistema. Caso o problema persista, sugerimos agendar uma assistência técnica para diagnosticar e solucionar a questão. Se necessário, também é possível encomendar novos equipamentos.\n\nEstamos à disposição para qualquer dúvida ou ajuda adicional. Você pode nos contatar pelo telefone +55 11 4002-8922 ou pelo e-mail ajuda@delfino.com.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável pela Limpa EIRELI,\n\nEstamos entrando em contato para informá-lo sobre uma anomalia detectada em uma das leituras do seu sistema de energia solar, referente ao contrato número 20, que teve início em 04 de maio de 2025. A leitura, que ocorreu no dia 23 de julho de 2025, foi identificada como uma leitura vazia, o que pode ser resultado de problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados.\n\nRecomendamos algumas ações imediatas que podem ajudar a resolver essa situação:\n\n1. Reinicie o sistema de monitoramento para verificar se a leitura se normaliza.\n2. Caso o problema persista, sugiro agendar uma assistência técnica para uma verificação mais detalhada.\n3. Se necessário, considere a encomenda de novos equipamentos que possam estar comprometidos.\n\nÉ importante resolver essa situação para garantir que seu sistema funcione de maneira eficiente e que você continue a aproveitar os benefícios da energia solar.\n\nSe precisar de mais informações ou assistência, por favor, não hesite em entrar em contato.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Limpa EIRELI,\n\nEsperamos que esteja bem. \n\nEstamos entrando em contato para informar sobre uma anomalia na leitura de consumo de energia solar registrada no dia 23 de julho de 2025, referente ao seu contrato número 19, que teve início em 3 de fevereiro de 2024. A leitura identificada foi considerada \"vazia\", o que pode indicar um possível problema.\n\nAs possíveis causas para essa situação incluem problemas de conectividade, o inversor desligado ou com defeito, ou disjuntores desarmados. Para resolver essa questão, recomendamos que você considere as seguintes ações:\n\n- Reiniciar o sistema de monitoramento.\n- Agendar uma assistência técnica com um de nossos profissionais.\n- Em caso de necessidade, também pode ser necessário encomendar novos equipamentos.\n\nNós estamos à disposição para ajudar você a solucionar essa questão. Para agendar um suporte técnico ou tirar dúvidas, por favor, entre em contato conosco.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \nEmail: ajuda@delfino.com  \nTelefone: +55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável pela Limpa EIRELI,\n\nEsperamos que esteja bem. \n\nEstamos entrando em contato para informar que uma leitura referente ao seu contrato de número 20, com data de início em 04 de maio de 2025, foi identificada como anormal. A leitura realizada no dia 23 de julho de 2025, referente ao ID 16, apresentou um valor vazio, o que é considerado uma leitura inválida.\n\nEsse tipo de problema pode ocorrer por diversos motivos, como problemas de conectividade, um inversor desligado ou com defeito, ou ainda disjuntores desarmados. Para assegurar o correto funcionamento do seu sistema de energia solar, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar assistência técnica para avaliação do sistema.\n3. Em caso de necessidade, encomendar novos equipamentos.\n\nEstamos à disposição para ajudar na resolução deste problema, caso precise de suporte ou deseja agendar um atendimento técnico, por favor, entre em contato conosco.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \nEmail: ajuda@delfino.com  \nTelefone: +55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Limpa EIRELI,\n\nEsperamos que este e-mail os encontre bem.\n\nGostaríamos de informar que uma leitura vinculada ao contrato de número 20, iniciado em 4 de maio de 2025, foi identificada como uma anomalia. A leitura registrada no dia 24 de julho de 2025 (ID: 16) apresentou uma ocorrência de leitura vazia, o que pode indicar problemas de conectividade, um inversor desligado ou com defeito, ou até disjuntores desarmados.\n\nPara solucionar este problema, recomendamos as seguintes ações:\n\n1. Verificar se o sistema de monitoramento pode ser reiniciado.\n2. Agendar uma assistência técnica para identificar e corrigir eventuais falhas.\n3. Considerar a possibilidade de encomendar novos equipamentos, caso se confirme a necessidade.\n\nEstamos à disposição para ajudar no que for necessário. Por favor, não hesite em nos contatar através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Limpa EIRELI,\n\nEsperamos que esteja bem. \n\nEstamos entrando em contato para informar que uma das suas leituras de energia solar foi identificada como uma possível falha. A leitura em questão ocorreu no dia 25 de julho de 2025, relacionada ao contrato de número 19, que teve início em 3 de fevereiro de 2024.\n\nInfelizmente, a leitura foi registrada como \"vazia\", o que pode sugerir alguns problemas relacionados ao seu sistema. As possíveis causas para essa ocorrência incluem:\n\n- Problemas de conectividade\n- Inversor desligado ou com defeito\n- Disjuntores desarmados\n\nPara resolver esse problema, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar uma assistência técnica para verificar o funcionamento do sistema.\n3. Caso necessário, considerar a encomenda de novos equipamentos.\n\nEstamos à disposição para ajudar caso precise de suporte adicional ou tenha alguma dúvida sobre os passos recomendados. \n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente,\n\nNós da Delfino Sunshine LTDA. estamos entrando em contato para informar que identificamos uma leitura de energia solar referente ao seu contrato de número 20, iniciado em 04 de maio de 2025, que foi registrada como uma leitura vazia na data de 25 de julho de 2025. \n\nAs leituras vazias podem ser causadas por diversos fatores, entre eles problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados. Para garantir que o sistema de energia solar esteja funcionando corretamente, recomendamos as seguintes ações:\n\n1. Reinicie o sistema de monitoramento.\n2. Agende uma assistência técnica para verificar a situação do seu equipamento.\n3. Caso necessário, considere encomendar novos equipamentos.\n\nFicamos à disposição para ajudar na resolução dessa situação. Para agendamentos ou qualquer outra dúvida, por favor, entre em contato conosco através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Limpa EPP,\n\nEspero que esta mensagem o(a) encontre bem.\n\nGostaríamos de informar que, em nossa última análise, uma leitura referente ao seu contrato (ID: 18), datada de 27 de julho de 2025, foi identificada como uma leitura vazia. Essa inconsistência pode estar relacionada a problemas de conectividade, o inversor podendo estar desligado ou apresentar falhas, ou disjuntores desarmados.\n\nPara garantir o funcionamento adequado do seu sistema de energia solar, recomendamos que você:\n\n1. Reinicie o sistema de monitoramento.\n2. Caso o problema persista, agende assistência técnica para uma avaliação mais detalhada.\n3. Considere a encomenda de novos equipamentos se necessário.\n\nEstamos à disposição para ajudá-lo(a) com qualquer uma dessas recomendações e garantir que o seu sistema continue operando corretamente. Para mais informações ou agendamentos, não hesite em entrar em contato conosco.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável pela Limpa EIRELI,\n\nEsperamos que este e-mail o(a) encontre bem.\n\nEntramos em contato para informá-lo(a) sobre uma anomalia detectada na leitura vinculada ao seu contrato de número 19, iniciado em 3 de fevereiro de 2024. No dia 27 de julho de 2025, a leitura registrada foi classificada como \"vazia\", o que sugere que o seu sistema de monitoramento pode estar enfrentando problemas.\n\nAs possíveis causas para essa leitura vazia incluem:\n\n- Problemas de conectividade com o sistema de monitoramento.\n- Inversor desligado ou apresentando defeito.\n- Disjuntores desarmados.\n\nPara solucionar essa situação, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar assistência técnica para uma avaliação mais detalhada.\n3. Considerar a encomenda de novos equipamentos, caso a avaliação indique essa necessidade.\n\nEstamos à disposição para ajudá-lo(a) a resolver essa questão o mais rápido possível. Para agendar um atendimento ou se você tiver alguma dúvida, não hesite em entrar em contato conosco através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAgradecemos pela sua atenção e confiança em nossos serviços.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente da Sun EPP,\n\nEstamos entrando em contato para informar que a leitura de consumo de energia solar referente ao contrato número 17, datada de 28 de julho de 2025, foi identificada como uma leitura vazia. Esse cenário pode ocorrer devido a problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados.\n\nRecomendamos as seguintes ações a serem tomadas:\n\n1. Reiniciar o sistema de monitoramento para verificar se a leitura retorna ao normal.\n2. Caso o problema persista, sugerimos agendar assistência técnica para uma análise mais aprofundada.\n3. Em última instância, pode ser necessário encomendar novos equipamentos se os problemas forem relacionados a falhas irreparáveis.\n\nEstamos à disposição para auxiliar na resolução deste problema. Para mais informações ou para agendar um atendimento, não hesite em entrar em contato.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \nEmail: ajuda@delfino.com  \nTelefone: +55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente,\n\nEsperamos que você esteja bem. \n\nEstamos entrando em contato para informar que a leitura do seu sistema de energia solar, referente ao contrato número 17, apresenta uma anomalia. A leitura realizada no dia 28 de julho de 2025 foi identificada como uma leitura vazia. \n\nAs possíveis causas para esse tipo de leitura podem incluir problemas de conectividade, inversor desligado ou com defeito, ou ainda disjuntores desarmados. \n\nPara solucionar esse problema, recomendamos as seguintes ações:\n- Reinicie o sistema de monitoramento para verificar se a leitura é restabelecida.\n- Caso o problema persista, sugerimos agendar uma assistência técnica para uma análise mais detalhada do equipamento.\n- Em situações mais críticas, pode ser necessário encomendar novos equipamentos.\n\nFicamos à disposição para ajudar no que for necessário. Caso tenha dúvidas ou precise de mais informações, sinta-se à vontade para entrar em contato conosco através do e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) Senhor(a),\n\nEstamos entrando em contato para informar sobre uma irregularidade na leitura de energia solar referente ao seu contrato nº 18, iniciado em 05 de fevereiro de 2022. A leitura identificada no dia 29 de julho de 2025 (ID da Leitura: 15) foi considerada vazia, o que indica que pode haver um problema no sistema de monitoramento.\n\nAs causas possíveis para essa ocorrência incluem:\n- Problemas de conectividade\n- Inversor desligado ou com defeito\n- Disjuntores desarmados\n\nRecomendamos que você tome as seguintes ações:\n1. Reiniciar o sistema de monitoramento para verificar se a leitura é normalizada.\n2. Agendar uma assistência técnica para uma inspeção completa do sistema.\n3. Caso o problema persista, considerar a encomenda de novos equipamentos.\n\nEstamos à disposição para ajudar e garantir que sua sistema de energia solar esteja funcionando da melhor forma possível. Se precisar de mais informações ou assistência, não hesite em nos contatar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezados,\n\nEstamos entrando em contato para informar que identificamos uma anomalia na leitura do sistema de energia solar referente ao contrato de sua empresa, Limpa EIRELI (CNPJ: 55.786.898/0001-67). A leitura registrada no dia 29 de julho de 2025 (ID da leitura: 16) está classificada como \"leitura vazia\", o que indica que pode haver um problema com o sistema.\n\nAs possíveis causas para esta leitura incluem: problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados. Recomendamos as seguintes ações para solucionar a questão:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar uma assistência técnica para verificar o funcionamento do sistema.\n3. Considerar a encomenda de novos equipamentos caso a falha persista.\n\nEstamos à disposição para auxiliar no agendamento de qualquer serviço técnico necessário para regularizar a situação. \n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável pela Limpa EIRELI,\n\nEspero que este e-mail o (a) encontre bem.\n\nEstamos entrando em contato para informar que uma leitura referente ao seu contrato (ID: 20) realizado em 29 de julho de 2025, apresentou um valor vazio. Essa situação, classificada como uma leitura vazia, pode ser indicativa de alguns problemas, como:\n\n- Problemas de conectividade;\n- Inversor desligado ou com defeito;\n- Disjuntores desarmados.\n\nRecomendamos que você tome as seguintes providências:\n\n1. Reinicie o sistema de monitoramento da sua instalação.\n2. Se o problema persistir, recomendamos agendar uma assistência técnica para uma melhor análise do sistema.\n3. Caso necessário, considere a encomenda de novos equipamentos.\n\nEstamos disponíveis para ajudá-lo(a) nesse processo e garantir que o seu sistema de energia solar funcione adequadamente.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente,\n\nEsperamos que esteja bem. \n\nEstamos entrando em contato para informar que, em nossa mais recente análise de dados, identificamos uma leitura de monitoramento associada ao seu contrato (ID: 19), referente ao serviço prestado à sua empresa, Limpa EIRELI, que foi classificada como uma leitura vazia.\n\nA leitura vazia ocorreu na data de 30 de julho de 2025, e pode ser devido a algumas situações, como problemas de conectividade, inversor desligado ou em defeito, ou disjuntores desarmados. \n\nPara resolver essa questão, recomendamos as seguintes ações:\n- Reiniciar o sistema de monitoramento;\n- Agendar assistência técnica especializada;\n- Verificar a necessidade de encomendar novos equipamentos.\n\nPor favor, não hesite em entrar em contato conosco para que possamos auxiliá-lo neste processo e garantir o correto funcionamento do seu sistema de energia solar.\n\nEstamos à disposição para qualquer esclarecimento que você necessite.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente da Limpa EPP,\n\nEsperamos que este e-mail o(a) encontre bem. \n\nEstamos entrando em contato para informar que identificamos uma anomalia na leitura de seu sistema de energia solar referente ao contrato de número 18, iniciado em 5 de fevereiro de 2022. A leitura realizada no dia 30 de julho de 2025 apresentou um valor vazio, o que indica que pode ter ocorrido um problema no sistema.\n\nAs possíveis causas para essa leitura vazia podem incluir questões como problemas de conectividade, o inversor desligado ou com defeito, ou disjuntores desarmados.\n\nPara resolver esta situação, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar uma assistência técnica com nossa equipe.\n3. Se necessário, considerar a encomenda de novos equipamentos.\n\nPor favor, entre em contato conosco para agendar a assistência ou para qualquer dúvida. Estamos à disposição para ajudar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) Senhor(a),\n\nEspero que este e-mail o encontre bem. Gostaríamos de informar que identificamos uma anomalia na leitura referente ao seu contrato, identificado pelo número 19, com início em 03 de fevereiro de 2024. A leitura realizada no dia 31 de julho de 2025, com ID 16, apresentou um resultado que classificamos como \"leitura vazia\".\n\nAs leituras vazias podem ocorrer devido a algumas razões, como problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados. Para resolver essa situação, recomendamos as seguintes ações:\n\n1. **Reiniciar o sistema de monitoramento**: Isso pode ajudar a restabelecer a comunicação entre os componentes do sistema.\n2. **Agendar assistência técnica**: A nossa equipe técnica pode inspecionar o sistema para identificar e reparar quaisquer problemas.\n3. **Encomendar novos equipamentos**: Caso se comprove a necessidade de troca de equipamentos danificados, nossa equipe estará à disposição para auxiliar nesse processo.\n\nNão hesite em nos contatar, caso tenha dúvidas ou precise de assistência adicional. Estamos aqui para ajudar.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.  \najuda@delfino.com  \n+55 11 4002-8922  ",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável da Limpa EIRELI,\n\nEsperamos que este e-mail o(a) encontre bem.\n\nEstamos entrando em contato para informá-lo(a) sobre uma anomalia detectada na leitura do sistema de monitoramento de energia solar referente ao seu contrato n° 20, com início em 04 de maio de 2025. A leitura realizada no dia 31 de julho de 2025 foi identificada como \"vazia\".\n\nAs leituras vazias podem ocorrer devido a problemas de conectividade, o inversor estar desligado ou com defeito, ou disjuntores desarmados. Para resolver essa situação, recomendamos as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento.\n2. Agendar uma assistência técnica para diagnóstico mais detalhado.\n3. Verificar a necessidade de novos equipamentos, caso identifiquemos falhas.\n\nAgradecemos pela sua atenção e estamos à disposição para qualquer dúvida ou esclarecimento adicional. Para mais assistência, não hesite em entrar em contato conosco pelo telefone +55 11 4002-8922 ou pelo e-mail ajuda@delfino.com.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) responsável pela Limpa EIRELI,\n\nEsperamos que este e-mail o(a) encontre bem.\n\nEstamos entrando em contato para informá-lo(a) sobre uma leitura referente ao seu contrato (ID: 20), datada de 31 de julho de 2025, que foi identificada como uma leitura vazia. Essa leitura, que não apresenta um valor, pode indicar:\n\n- Problemas de conectividade\n- Inversor desligado ou com defeito\n- Disjuntores desarmados\n\nDiante disso, recomendamos as seguintes ações para resolver a situação:\n\n1. Reinicie o sistema de monitoramento.\n2. Agende assistência técnica com nossa equipe para verificar o funcionamento dos equipamentos.\n3. Se necessário, considere encomendar novos equipamentos.\n\nEstamos à disposição para ajudá-lo(a) com o que for preciso. Caso tenha alguma dúvida ou deseje mais informações, não hesite em nos contatar pelo e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      },
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Prezado(a) cliente Limpa EPP,\n\nEspero que esta mensagem o(a) encontre bem. \n\nEntramos em contato para informar que a leitura de energia solar registrada no dia 31 de julho de 2025, vinculada ao seu contrato nº 18, foi identificada como uma leitura vazia. Esta situação pode ocorrer devido a problemas de conectividade, inversor desligado ou com defeito, ou disjuntores desarmados.\n\nRecomendamos que você tome as seguintes ações:\n\n1. Reiniciar o sistema de monitoramento para tentar restabelecer a conexão.\n2. Agendar uma assistência técnica para verificar se há algum problema no inversor ou disjuntores.\n3. Se necessário, considerar a encomenda de novos equipamentos para evitar futuras interrupções.\n\nEstamos à disposição para ajudar no que for necessário e garantir que sua experiência com nossos serviços seja a melhor possível.\n\nCaso precise de assistência ou tenha alguma dúvida, entre em contato conosco pelo e-mail ajuda@delfino.com ou pelo telefone +55 11 4002-8922.\n\nAtenciosamente,\n\nPianta  \nRobô  \nDelfino Sunshine LTDA.",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "START",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encontra Valores (F)": {
+      "main": [
+        [
+          {
+            "node": "Calcula Score (F)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcula Score (F)": {
+      "main": [
+        [
+          {
+            "node": "Maior que 3 (F)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Menor que -3 (F)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Menor que -3 (F)": {
+      "main": [
+        [
+          {
+            "node": "BAIXA(F)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Maior que 3 (F)": {
+      "main": [
+        [
+          {
+            "node": "ALTA(F)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "START": {
+      "main": [
+        [
+          {
+            "node": "Encontra Valores (F)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Leituras Vazias (F)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Encontra Valores (J)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Leituras Vazias (J)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leituras Vazias (F)": {
+      "main": [
+        [
+          {
+            "node": "NULL(F)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Maior que 3 (F)1": {
+      "main": [
+        [
+          {
+            "node": "ALTA(J)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Menor que -3 (F)1": {
+      "main": [
+        [
+          {
+            "node": "BAIXA(J)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "START",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encontra Valores (J)": {
+      "main": [
+        [
+          {
+            "node": "Calcula Score (J)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcula Score (J)": {
+      "main": [
+        [
+          {
+            "node": "Maior que 3 (F)1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Menor que -3 (F)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leituras Vazias (J)": {
+      "main": [
+        [
+          {
+            "node": "NULL(J)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email": {
+      "main": [
+        [
+          {
+            "node": "ESPERA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge5": {
+      "main": [
+        [
+          {
+            "node": "ESPERA",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "ALTA(F)": {
+      "main": [
+        [
+          {
+            "node": "LEITURAS(F)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "REROUTE-AF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BAIXA(F)": {
+      "main": [
+        [
+          {
+            "node": "LEITURAS(F)",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "REROUTE-BF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NULL(F)": {
+      "main": [
+        [
+          {
+            "node": "LEITURAS(F)",
+            "type": "main",
+            "index": 2
+          },
+          {
+            "node": "REROUTE-NF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REROUTE-NF": {
+      "main": [
+        [
+          {
+            "node": "COUNT NF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REROUTE-BF": {
+      "main": [
+        [
+          {
+            "node": "COUNT BF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REROUTE-AF": {
+      "main": [
+        [
+          {
+            "node": "COUNT AF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ALTA(J)": {
+      "main": [
+        [
+          {
+            "node": "LEITURAS(J)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "REROUTE-AJ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BAIXA(J)": {
+      "main": [
+        [
+          {
+            "node": "LEITURAS(J)",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "REROUTE-BJ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NULL(J)": {
+      "main": [
+        [
+          {
+            "node": "LEITURAS(J)",
+            "type": "main",
+            "index": 2
+          },
+          {
+            "node": "REROUTE-NJ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REROUTE-NJ": {
+      "main": [
+        [
+          {
+            "node": "COUNT NJ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REROUTE-BJ": {
+      "main": [
+        [
+          {
+            "node": "COUNT BJ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REROUTE-AJ": {
+      "main": [
+        [
+          {
+            "node": "COUNT AJ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LEITURAS(F)": {
+      "main": [
+        [
+          {
+            "node": "Mensagem Para Pessoas Físicas",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Combina Endereço e Mensagem (F)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "LEITURAS(J)": {
+      "main": [
+        [
+          {
+            "node": "Mensagem Para Pessoas Jurídicas",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Combina Endereço e Mensagem (J)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Mensagem Para Pessoas Físicas": {
+      "main": [
+        [
+          {
+            "node": "Combina Endereço e Mensagem (F)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem Para Pessoas Jurídicas": {
+      "main": [
+        [
+          {
+            "node": "Combina Endereço e Mensagem (J)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combina Endereço e Mensagem (J)": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Combina Endereço e Mensagem (F)": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "COUNT AF": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "COUNT BF": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "COUNT NF": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "COUNT AJ": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "COUNT BJ": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "COUNT NJ": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "ESPERA": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c927dd7b-b8c0-4c1e-9156-04c6c5fef01a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "51be389492931e958da1ec3c4cc03c8044ac06dd89d9465126f3cdb442363742"
+  },
+  "id": "oU7ffq2ZXzxf6vsZ",
+  "tags": []
+}

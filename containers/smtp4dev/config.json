@@ -1,0 +1,109 @@
+{
+  "ServerOptions": {
+    "HostName": "mail.mock.local",
+    "Port": 25,
+    "AllowRemoteConnections": true,
+    "AuthenticationRequired": true,
+    "SecureConnectionRequired": false,
+    "NumberOfMessagesToKeep": 100,
+    "NumberOfSessionsToKeep": 100,
+    "Users": [
+      {
+        "Username": "admin",
+        "Password": "abacaxi_selvagem",
+        "DefaultMailbox": "Ajuda"
+      },
+      {
+        "Username": "Pianta",
+        "Password": "12345678",
+        "DefaultMailbox": "Ajuda"
+      }
+    ],
+    "Mailboxes": [
+      {
+        "Name": "Ajuda",
+        "Recipients": ["ajuda@delfino.com"]
+      },
+      {
+        "Name": "Gabriel Martins Lima",
+        "Recipients": "gabslimelight@gmail.com"
+      },
+      {
+        "Name": "Rodrigo Fernandes Cunha",
+        "Recipients": "diguinho_adventure@hotmail.com"
+      },
+      {
+        "Name": "João Souza Rocha",
+        "Recipients": "rockstar_joao@yahoo.com.br"
+      },
+      {
+        "Name": "Larissa Ferreira Dias",
+        "Recipients": "lari_days@outlook.com"
+      },
+      {
+        "Name": "Paulo Mendes Barbosa",
+        "Recipients": "paulo_vascaino_mb@gmail.com"
+      },
+      {
+        "Name": "Leonardo Cavalcanti Silva",
+        "Recipients": "uchiha_leo@uol.com.br"
+      },
+      {
+        "Name": "Diego Almeida Gomes",
+        "Recipients": "almighty_dreamer_br@terra.com.br"
+      },
+      {
+        "Name": "Lucia Freitas Castro",
+        "Recipients": "lucia_de_jesus98@bol.com.br"
+      },
+      {
+        "Name": "Diego Cavalcanti Costa",
+        "Recipients": "diego_coastal_rider@gmail.com"
+      },
+      {
+        "Name": "Lucia Pereira Souza",
+        "Recipients": "luci_pearl_mystique@hotmail.com"
+      },
+      {
+        "Name": "Beatriz Santos Pereira",
+        "Recipients": "bia_starlight_santos@gmail.com"
+      },
+      {
+        "Name": "Mariana Mendes Rodrigues",
+        "Recipients": "marizinha_pao_de_queijo@outlook.com"
+      },
+      {
+        "Name": "Volt do Brasil EIRELI",
+        "Recipients": "contato@voltbrasil.com.br"
+      },
+      {
+        "Name": "Sun EPP",
+        "Recipients": "comercial@sunepp.com.br"
+      },
+      {
+        "Name": "Limpa EPP",
+        "Recipients": "vendas@limpaepp.com.br"
+      },
+      {
+        "Name": "Limpa EIRELI",
+        "Recipients": "atendimento@limpaeireli.com.br"
+      },
+      {
+        "Name": "Energy ME",
+        "Recipients": "info@energyme.com.br"
+      },
+      {
+        "Name": "Ilumina S.A.",
+        "Recipients": "sac@ilumina.com.br"
+      },
+      {
+        "Name": "Green EIRELI",
+        "Recipients": "contato@greeneireli.com.br"
+      },
+      {
+        "Name": "Energia Solar EIRELI",
+        "Recipients": "comercial@energiasolar.com.br"
+      }
+    ]
+  }
+}

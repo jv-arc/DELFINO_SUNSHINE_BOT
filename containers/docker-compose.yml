@@ -1,0 +1,153 @@
+#=======================================================
+# DOCKER COMPOSE
+#=======================================================
+# Autor: Joao Victor Araujo e Rocha de Carvalho
+#
+# Case para 39A
+#=======================================================
+
+# Eu achei que eu manjava de docker ate tentar fazer isso daqui 
+# e falhar inumeras vezes kkkk. Acho que foi a parte que mais 
+# me deu trabalho no case
+
+services:
+
+#.................. Banco de Dados .....................
+  postgres:
+    image: postgres:16-alpine
+    container_name: case-39a-db
+    restart: unless-stopped
+
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+
+    networks:
+      - n8n-network
+
+    ports:
+      - 5432:5432
+
+    volumes:
+      - type: volume
+        source: postgres-data
+        target: /var/lib/postgresql/data
+
+      - type: bind
+        source: ./postgres/init.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+
+    command: postgres -c ssl=off
+
+    healthcheck:
+      test: pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+#............................................
+
+
+
+
+#.................. n8n .....................
+
+
+  n8n:
+    image: n8nio/n8n
+    container_name: case-39a-n8n
+    restart: unless-stopped
+
+    environment:
+      # Banco de Dados:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - CREDENTIALS_OVERWRITE_DATA=${N8N_CREDENTIALS_POSTGRES}
+    
+      # Email:
+      - N8N_EMAIL_MODE=smtp
+      - N8N_SMTP_HOST=smtp4dev
+      - N8N_SMTP_PORT=2525
+      - N8N_SMTP_SSL=false
+
+      # Outros:
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true  
+
+    volumes:
+      - type: volume
+        source: n8n-data
+        target: /home/node/.n8n
+
+      - type: bind
+        source: ./n8n/workflows
+        target: /home/node/workflows
+
+      - type: bind
+        source: ./n8n/dados_iniciais.zip
+        target: /files/dados_iniciais.zip
+
+      - type: bind
+        source: ./n8n/credentials.json
+        target: /home/credentials.json
+
+      - type: bind
+        source: ./n8n/entrypoint.sh
+        target: /docker-entrypoint.sh
+
+    networks:
+      - n8n-network
+
+    ports:
+      - 5678:5678    
+
+    entrypoint: /docker-entrypoint.sh
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+#............................................
+
+
+
+
+#............... Servidor de Email .................
+  smtp4dev:
+    image: rnwood/smtp4dev
+    container_name: case-39a-smtp
+    restart: unless-stopped
+
+    environment:
+      # Para o servidor ouvir todas as interfaces
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+
+    networks:
+      - n8n-network
+
+    ports:
+      - "3300:80"
+      - "2525:25"
+
+    volumes:
+      - type: bind
+        source: ./smtp4dev/config.json
+        target: /smtp4dev/appsettings.json
+#............................................
+
+
+
+
+volumes:
+  postgres-data:
+  n8n-data:
+
+
+networks:
+  n8n-network:
+    driver: bridge

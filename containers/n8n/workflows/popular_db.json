@@ -1,0 +1,1209 @@
+{
+  "name": "popular_db",
+  "nodes": [
+    {
+      "parameters": {
+        "fileSelector": "/files/dados_iniciais.zip",
+        "options": {
+          "fileExtension": "zip"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -1056,
+        -432
+      ],
+      "id": "f4267e9f-ac26-4469-a6a6-5ba477c61d64",
+      "name": "Read/Write Files from Disk",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        -944,
+        -432
+      ],
+      "id": "b14c6a37-f3d3-438f-9c49-688bfe6e248f",
+      "name": "Compression"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "$binary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1056,
+        -224
+      ],
+      "id": "cc9342c4-c2b3-448f-9f95-9055b6c63bc8",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().flatMap(item => \n    item.binary ? Object.keys(item.binary).map(key => ({\n        json: { fileName: item.binary[key].fileName },\n        binary: { data: item.binary[key] }\n    })) : []\n);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -944,
+        -224
+      ],
+      "id": "d2da60a2-1eae-4abc-a218-8f53e27f3954",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "content": "## Clientes\n",
+        "height": 384,
+        "width": 950,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -784
+      ],
+      "id": "ab1d5ba3-85d5-4e9c-ac42-e4f51b427138",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5001c502-5e23-4c48-a43a-12da092d938a",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": "=0",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        -736
+      ],
+      "id": "2caf8482-2d36-422f-a89c-8340be0c9837",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -224
+      ],
+      "id": "ba660bc8-c8a8-4fc5-b389-fc815ab85011",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        320,
+        -736
+      ],
+      "id": "a67d9f11-fcc1-4ecd-8e60-712fb8b59104",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        496,
+        -544
+      ],
+      "id": "8c779bc9-5cbc-4bba-9af0-c7504348de51",
+      "name": "fim_adiciona_clientes"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) FROM clientes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -16,
+        -736
+      ],
+      "id": "8d0272f8-aa77-4ab7-8839-b2edaff21846",
+      "name": "Clientes Vazio?",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -736
+      ],
+      "id": "7dea53bf-8935-4977-96b2-f8401d52cd72",
+      "name": "Lê clientes",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "clientes",
+          "mode": "list",
+          "cachedResultName": "clientes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "nome": "={{ $json.nome }}",
+            "email": "={{ $json.email }}",
+            "cpf": "={{ $json.cpf }}",
+            "tipo": "={{ $json.tipo }}",
+            "cnpj": "={{ $json.cnpj }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cpf",
+              "displayName": "cpf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cnpj",
+              "displayName": "cnpj",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tipo",
+              "displayName": "tipo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        720,
+        -736
+      ],
+      "id": "314d0733-437e-435f-8ff5-46b84d653d15",
+      "name": "Adiciona Clientes",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f02193a6-594b-4778-b7e5-5d920e6180a8",
+              "leftValue": "={{ $json.fileName }}",
+              "rightValue": "clientes.csv",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -736
+      ],
+      "id": "c3942d2f-bea4-46dc-8e2a-5c936687685f",
+      "name": "seleciona clientes.csv"
+    },
+    {
+      "parameters": {
+        "content": "## Contratos\n",
+        "height": 432,
+        "width": 950,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -272
+      ],
+      "id": "c35e2f45-b24a-4072-acb8-a621dac8fe3d",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5001c502-5e23-4c48-a43a-12da092d938a",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": "=0",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        -16
+      ],
+      "id": "5aee1263-78b4-4646-97a7-1ec96294eb01",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 3,
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        272,
+        -240
+      ],
+      "id": "928d2446-3c6e-4945-8419-f6d565e2408d",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) FROM contratos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "74012724-0dce-4093-8e40-e8645e2370b4",
+      "name": "Contratos Vazio?",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f02193a6-594b-4778-b7e5-5d920e6180a8",
+              "leftValue": "={{ $json.fileName }}",
+              "rightValue": "contratos.csv",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        -224
+      ],
+      "id": "3f964d08-4b1a-42e5-b5eb-ea34a1a0c367",
+      "name": "seleciona contratos.csv"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        576,
+        -224
+      ],
+      "id": "dc1b1205-9e61-426c-87ef-16409d9ebbce",
+      "name": "Lê contratos",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "contratos",
+          "mode": "list",
+          "cachedResultName": "contratos"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "fk_cliente": "={{ $json.fk_cliente }}",
+            "data_inicio": "={{ $json.data_inicio }}",
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fk_cliente",
+              "displayName": "fk_cliente",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "data_inicio",
+              "displayName": "data_inicio",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        736,
+        -224
+      ],
+      "id": "e3e7bed2-a8e7-487d-94dd-2580b552fa34",
+      "name": "Adiciona contratos",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b82da724-368c-4781-9a82-9bb42098dc50",
+      "name": "fim_adiciona_contratos"
+    },
+    {
+      "parameters": {
+        "content": "## Leituras\n",
+        "height": 432,
+        "width": 950,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        224
+      ],
+      "id": "d28c4c7c-39c5-43c1-8a9e-4e04a4ebb27b",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5001c502-5e23-4c48-a43a-12da092d938a",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": "=0",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        480
+      ],
+      "id": "cd8a5cca-4503-4437-af89-81ba3bf3cd80",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 3,
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        272,
+        256
+      ],
+      "id": "60789a87-cf96-47f4-b276-f1b77f186534",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) FROM leituras",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        480
+      ],
+      "id": "e251634c-2378-4d58-a10d-5d1628032d35",
+      "name": "leituras Vazio?",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f02193a6-594b-4778-b7e5-5d920e6180a8",
+              "leftValue": "={{ $json.fileName }}",
+              "rightValue": "leituras.csv",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        272
+      ],
+      "id": "0c67f36b-476a-4021-9593-6d4d77f2bfc1",
+      "name": "seleciona leituras.csv"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        576,
+        272
+      ],
+      "id": "fd7e745b-313b-4dd4-b34b-832fed1ac45f",
+      "name": "Lê leituras",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "leituras",
+          "mode": "list",
+          "cachedResultName": "leituras"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "fk_contratos": "={{ $json.fk_contratos }}",
+            "data_leitura": "={{ $json.data_leitura }}",
+            "valor": "={{ $json.valor }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fk_contratos",
+              "displayName": "fk_contratos",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "data_leitura",
+              "displayName": "data_leitura",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "valor",
+              "displayName": "valor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        736,
+        272
+      ],
+      "id": "3117042f-4acd-4420-ae7d-a6ff9a270871",
+      "name": "Adiciona leituras",
+      "credentials": {
+        "postgres": {
+          "id": "pGudSjirfBdhsoiV",
+          "name": "My Postgres Credential"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        624,
+        496
+      ],
+      "id": "3d8ce41e-cd2f-4e06-ba8e-52cb54f21d87",
+      "name": "fim_adiciona_leituras"
+    },
+    {
+      "parameters": {
+        "content": "## Carrega Arquivos CSV",
+        "height": 432,
+        "width": 384,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        -496
+      ],
+      "id": "8590f6ec-faf2-40d5-8355-f337d0883bd9",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Sobre a Ordem\nAs tabelas possuem dependências e assim precisam ser populadas na sequência correta",
+        "height": 112,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        -784
+      ],
+      "id": "2923759f-c41b-430b-9cde-ee5253c9b5d5",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "path": "popular_db",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1440,
+        -336
+      ],
+      "id": "dc597c8f-ab70-4ed6-8630-6518726fcde7",
+      "name": "Webhook",
+      "webhookId": "0aab00b7-bf6f-4905-bc94-6c170cf124dd"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"Banco de dados populado\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1200,
+        496
+      ],
+      "id": "c9f30bb7-dc27-4ad9-a823-48d14747e58e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        -512
+      ],
+      "id": "e3af03f4-2464-418b-9428-147614b21aac",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Compression",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compression": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Clientes Vazio?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Contratos Vazio?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "leituras Vazio?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "fim_adiciona_clientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "seleciona clientes.csv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fim_adiciona_clientes": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clientes Vazio?": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lê clientes": {
+      "main": [
+        [
+          {
+            "node": "Adiciona Clientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adiciona Clientes": {
+      "main": [
+        [
+          {
+            "node": "fim_adiciona_clientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "seleciona clientes.csv": {
+      "main": [
+        [
+          {
+            "node": "Lê clientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ],
+        [
+          {
+            "node": "fim_adiciona_contratos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "seleciona contratos.csv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contratos Vazio?": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "seleciona contratos.csv": {
+      "main": [
+        [
+          {
+            "node": "Lê contratos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lê contratos": {
+      "main": [
+        [
+          {
+            "node": "Adiciona contratos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adiciona contratos": {
+      "main": [
+        [
+          {
+            "node": "fim_adiciona_contratos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ],
+        [
+          {
+            "node": "fim_adiciona_leituras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "seleciona leituras.csv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fim_adiciona_contratos": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "leituras Vazio?": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "seleciona leituras.csv": {
+      "main": [
+        [
+          {
+            "node": "Lê leituras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lê leituras": {
+      "main": [
+        [
+          {
+            "node": "Adiciona leituras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adiciona leituras": {
+      "main": [
+        [
+          {
+            "node": "fim_adiciona_leituras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fim_adiciona_leituras": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "69ac25a8-b9bb-41bb-8edb-958623360ebe",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "51be389492931e958da1ec3c4cc03c8044ac06dd89d9465126f3cdb442363742"
+  },
+  "id": "JoR7M9uw6gM9LpC1",
+  "tags": []
+}
